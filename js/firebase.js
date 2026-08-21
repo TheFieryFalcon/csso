@@ -79,7 +79,7 @@ export function loadLocalProfile() {
     return {
         uid: 'guest_' + Math.random().toString(36).substr(2, 9),
         displayName: 'Year 12 Mathlete',
-        avatar: '🧮',
+        avatar: '\ud83e\uddee',
         elo: 1200,
         isGuest: true,
         stats: getInitialStats()
@@ -158,6 +158,32 @@ export function subscribeToRoom(roomId, callback) {
         if (rooms[roomId]) callback(rooms[roomId]);
     }, 500);
     return () => clearInterval(interval);
+}
+
+// ---------------------------------------------------------
+// HOST-DELEGATED PROOF QUERY DISPATCH HELPERS
+// ---------------------------------------------------------
+export async function submitProofQueryToRoom(roomId, queryData) {
+    const queryId = 'query_' + Math.random().toString(36).substr(2, 9);
+    const patch = {
+        [`pendingQueries.${queryId}`]: {
+            ...queryData,
+            id: queryId,
+            status: 'pending',
+            createdAt: Date.now()
+        }
+    };
+    await updateRoomInDB(roomId, patch);
+    return queryId;
+}
+
+export async function resolveProofQueryInRoom(roomId, queryId, result) {
+    const patch = {
+        [`pendingQueries.${queryId}.status`]: 'resolved',
+        [`pendingQueries.${queryId}.result`]: result,
+        [`pendingQueries.${queryId}.resolvedAt`]: Date.now()
+    };
+    await updateRoomInDB(roomId, patch);
 }
 
 export {

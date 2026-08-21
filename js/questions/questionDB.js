@@ -97,7 +97,25 @@ export class QuestionDB {
         };
     }
 
-    generateMatchSet(topics, count = 50) {
+    /**
+     * Determines whether a question object matches the allowed format filters
+     */
+    matchesFormat(q, formats) {
+        if (!formats) return true;
+        if (q.isProof) {
+            return Boolean(formats.proofs);
+        }
+        if (q.type === 'multi_step') {
+            return Boolean(formats.multi_step);
+        }
+        if (q.type === 'short_answer') {
+            return Boolean(formats.short_answer);
+        }
+        // Standard MCQ
+        return Boolean(formats.mcq);
+    }
+
+    generateMatchSet(topics, count = 50, allowedFormats = null) {
         if (!topics || !Array.isArray(topics) || topics.length === 0) {
             topics = [
                 'Functions and Graphs', 'Trigonometric Functions', 'Counting and Probability',
@@ -107,8 +125,15 @@ export class QuestionDB {
             ];
         }
 
+        const formats = allowedFormats || {
+            mcq: true,
+            short_answer: true,
+            multi_step: true,
+            proofs: true
+        };
+
         let pool = [];
-        pool.push(...this.staticQuestions.filter(q => topics.includes(q.topic)));
+        pool.push(...this.staticQuestions.filter(q => topics.includes(q.topic) && this.matchesFormat(q, formats)));
         
         const getQuestionKey = (q) => {
             if (!q) return '';
@@ -119,11 +144,11 @@ export class QuestionDB {
         };
 
         let attempts = 0;
-        while(pool.length < count && attempts < 6000) {
+        while (pool.length < count && attempts < 8000) {
             attempts++;
             const gen = this.generators[Math.floor(Math.random() * this.generators.length)];
             const q = gen();
-            if (q && topics.includes(q.topic)) {
+            if (q && topics.includes(q.topic) && this.matchesFormat(q, formats)) {
                 const qKey = getQuestionKey(q);
                 if (!pool.some(existing => getQuestionKey(existing) === qKey)) {
                     pool.push(q);
@@ -131,7 +156,7 @@ export class QuestionDB {
             }
         }
         
-        // If pool is smaller than count (e.g. strict single topic selection), fill with shuffled clones
+        // If pool is smaller than count, fill with shuffled copies to reach target count
         if (pool.length < count && pool.length > 0) {
             const originalPool = [...pool];
             while (pool.length < count) {
