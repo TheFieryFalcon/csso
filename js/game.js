@@ -1,9 +1,9 @@
 // ---------------------------------------------------------
-// GAME MATCH ENGINE & PROOF STEP VALIDATION
+// GAME MATCH ENGINE & HOST-DELEGATED PROOF STEP VALIDATION
 // ---------------------------------------------------------
 import { questionDB } from './questions/questionDB.js';
-import { updateRoomInDB, saveLocalProfile, getInitialStats } from './firebase.js';
-import { evaluateProofStepWithGemini } from './gemini.js';
+import { updateRoomInDB, saveLocalProfile, getInitialStats, submitProofQueryToRoom, getRoomFromDB } from './firebase.js';
+import { evaluateProofStepWithGemini, fallbackLocalProofEvaluator } from './gemini.js';
 import { showToast, showScreen, updateScoreboardUI } from './ui.js';
 
 export class GameEngine {
@@ -16,6 +16,7 @@ export class GameEngine {
         this.localScore = 0;
         this.targetScore = 10;
         this.isAnswerCooldown = false;
+        this.isAwaitingHostEvaluation = false;
     }
 
     startMatch({ questions, targetScore, roomId, isSolo = false }) {
@@ -26,6 +27,7 @@ export class GameEngine {
         this.localScore = 0;
         this.targetScore = targetScore || 10;
         this.isAnswerCooldown = false;
+        this.isAwaitingHostEvaluation = false;
         this.isSolo = isSolo;
 
         document.getElementById('game-room-indicator').innerText = isSolo ? "Solo Practice Mode" : `Room #${roomId}`;
@@ -58,6 +60,7 @@ export class GameEngine {
         if (aiBadge) {
             if (q.isProof) {
                 aiBadge.classList.remove('hidden');
+                aiBadge.innerText = this.isSolo ? "\u2728 Gemini AI Evaluated" : "\u2728 Host AI Evaluated";
             } else {
                 aiBadge.classList.add('hidden');
             }
@@ -142,6 +145,8 @@ export class GameEngine {
     }
 
     async submitShortAnswer() {
+        if (this.isAwaitingHostEvaluation || this.isAnswerCooldown) return;
+
         const inputVal = document.getElementById('short-answer-input').value;
         const q = this.matchQuestions[this.currentQuestionIndex];
         if (!q) return;
@@ -160,25 +165,85 @@ export class GameEngine {
             targetAnswers = q.acceptableAnswers || [];
         }
 
+        const submitBtn = document.getElementById('btn-submit-short-ans');
+
         // Check if Gemini evaluation should be called for open-ended proofs
         let isCorrect = false;
         let customFeedback = '';
 
         if (isProof) {
-            const evalResult = await evaluateProofStepWithGemini({
-                problemContext: q.text,
-                stepPrompt: promptText,
-                studentAnswer: inputVal,
-                expectedAnswerGuidelines: expectedGuidelines,
-                acceptableAnswers: targetAnswers
-            });
-            isCorrect = evalResult.isCorrect;
-            customFeedback = evalResult.feedback;
+            const isHost = this.state.roomData?.hostUid === this.state.currentUser?.uid;
+
+            if (this.isSolo || isHost) {
+                // Evaluate directly on host/solo client
+                const evalResult = await evaluateProofStepWithGemini({
+                    problemContext: q.text,
+                    stepPrompt: promptText,
+                    studentAnswer: inputVal,
+                    expectedAnswerGuidelines: expectedGuidelines,
+                    acceptableAnswers: targetAnswers
+                });
+                isCorrect = evalResult.isCorrect;
+                customFeedback = evalResult.feedback;
+            } else {
+                // Delegate to room host
+                this.isAwaitingHostEvaluation = true;
+                if (submitBtn) {
+                    submitBtn.innerText = "Verifying with Host AI...";
+                    submitBtn.classList.add('opacity-75', 'pointer-events-none');
+                }
+
+                try {
+                    const queryId = await submitProofQueryToRoom(this.state.currentRoomId, {
+                        playerId: this.state.currentUser.uid,
+                        problemContext: q.text,
+                        stepPrompt: promptText,
+                        studentAnswer: inputVal,
+                        expectedAnswerGuidelines: expectedGuidelines,
+                        acceptableAnswers: targetAnswers
+                    });
+
+                    // Wait for host to resolve query
+                    const result = await this.pollForQueryResolution(this.state.currentRoomId, queryId);
+                    isCorrect = result.isCorrect;
+                    customFeedback = result.feedback;
+                } catch (e) {
+                    console.warn("Host proof delegation timed out/failed, using local fallback:", e);
+                    const fallback = fallbackLocalProofEvaluator(inputVal, targetAnswers);
+                    isCorrect = fallback.isCorrect;
+                    customFeedback = fallback.feedback;
+                } finally {
+                    this.isAwaitingHostEvaluation = false;
+                    if (submitBtn) {
+                        submitBtn.innerText = "Submit";
+                        submitBtn.classList.remove('opacity-75', 'pointer-events-none');
+                    }
+                }
+            }
         } else {
             isCorrect = this.isAnswerMatching(inputVal, targetAnswers);
         }
 
-        this.handleSubmission(isCorrect, document.getElementById('btn-submit-short-ans'), customFeedback);
+        this.handleSubmission(isCorrect, submitBtn, customFeedback);
+    }
+
+    pollForQueryResolution(roomId, queryId, timeoutMs = 8000) {
+        return new Promise((resolve, reject) => {
+            const startTime = Date.now();
+            const interval = setInterval(async () => {
+                if (Date.now() - startTime > timeoutMs) {
+                    clearInterval(interval);
+                    reject(new Error("Host resolution timeout"));
+                    return;
+                }
+                const room = await getRoomFromDB(roomId);
+                const query = room?.pendingQueries?.[queryId];
+                if (query && query.status === 'resolved' && query.result) {
+                    clearInterval(interval);
+                    resolve(query.result);
+                }
+            }, 300);
+        });
     }
 
     async handleSubmission(isCorrect, sourceElement, feedbackMsg = '') {
@@ -211,7 +276,7 @@ export class GameEngine {
             }
 
             if (q.type === 'multi_step' && q.steps && this.currentMultiStepIndex < q.steps.length - 1) {
-                showToast(feedbackMsg || "✅ Correct Step! Advancing to next step...");
+                showToast(feedbackMsg || "\u2705 Correct Step! Advancing to next step...");
                 this.currentMultiStepIndex++;
                 setTimeout(() => {
                     this.isAnswerCooldown = false;
@@ -220,7 +285,7 @@ export class GameEngine {
                 return;
             }
 
-            showToast(feedbackMsg || "✅ Correct Answer! (+1 point)");
+            showToast(feedbackMsg || "\u2705 Correct Answer! (+1 point)");
             this.localScore += 1;
             document.getElementById('game-local-score').innerText = this.localScore;
             this.currentMultiStepIndex = 0;
@@ -266,7 +331,7 @@ export class GameEngine {
             // 3-Attempt Question Skipping Rule
             if (this.wrongAttemptsOnCurrentQuestion < 3) {
                 const attemptsRemaining = 3 - this.wrongAttemptsOnCurrentQuestion;
-                showToast(feedbackMsg || `❌ Incorrect! ${attemptsRemaining} attempt${attemptsRemaining > 1 ? 's' : ''} left. Try again!`, true);
+                showToast(feedbackMsg || `\u274c Incorrect! ${attemptsRemaining} attempt${attemptsRemaining > 1 ? 's' : ''} left. Try again!`, true);
 
                 setTimeout(() => {
                     this.isAnswerCooldown = false;
@@ -279,7 +344,7 @@ export class GameEngine {
 
             } else {
                 // 3 strikes -> skip question
-                showToast("❌ 3 incorrect attempts. Skipping question...", true);
+                showToast("\u274c 3 incorrect attempts. Skipping question...", true);
                 this.wrongAttemptsOnCurrentQuestion = 0;
                 this.currentMultiStepIndex = 0;
 
@@ -317,7 +382,7 @@ export class GameEngine {
         if (isWinner) userProfile.stats.matchesWon = (userProfile.stats.matchesWon || 0) + 1;
         saveLocalProfile(userProfile);
 
-        document.getElementById('results-winner-emoji').innerText = isWinner ? '🏆' : '🥈';
+        document.getElementById('results-winner-emoji').innerText = isWinner ? '\ud83c\udfc6' : '\ud83e\udd48';
         document.getElementById('results-headline').innerText = isWinner ? 'Victory!' : 'Match Concluded';
         document.getElementById('results-subtext').innerText = isWinner ? 'Goal reached! Elo rating increased.' : 'Good match!';
         document.getElementById('results-old-elo').innerText = oldElo;
@@ -332,7 +397,7 @@ export class GameEngine {
             <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-xs">
                 <div class="flex items-center space-x-2">
                     <span class="font-bold text-slate-400 font-mono">#1</span>
-                    <span>${userProfile.avatar || '🧮'}</span>
+                    <span>${userProfile.avatar || '\ud83e\uddee'}</span>
                     <span class="font-semibold text-white">${userProfile.displayName} (You)</span>
                 </div>
                 <span class="font-mono text-indigo-400 font-bold">${this.localScore} pts</span>
