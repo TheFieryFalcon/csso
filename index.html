@@ -16,6 +16,9 @@
             },
             svg: {
                 fontCache: 'global'
+            },
+            startup: {
+                typeset: true
             }
         };
     </script>
@@ -89,6 +92,18 @@
             transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* Custom Shake Animation */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+        }
+        .animate-shake {
+            animation: shake 0.45s ease-in-out;
+        }
+
         /* Custom Scrollbar */
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
@@ -105,8 +120,21 @@
             background: rgba(99, 102, 241, 0.7);
         }
 
-        /* MathJax adjustments */
-        mjx-container { color: #f8fafc !important; }
+        /* MathJax text rendering fixes: keep inline math inside text flow seamlessly without line-breaks */
+        mjx-container {
+            color: #f8fafc !important;
+            outline: none !important;
+        }
+        mjx-container[jax="CHTML"][display="true"] {
+            display: block !important;
+            margin: 0.5em 0 !important;
+            text-align: center !important;
+        }
+        mjx-container[jax="CHTML"]:not([display="true"]) {
+            display: inline-block !important;
+            margin: 0 0.18em !important;
+            vertical-align: -0.12em !important;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-between p-3 md:p-6">
@@ -243,44 +271,6 @@
                     </p>
                 </div>
             </section>
-
-            <!-- Curriculum Topics Overview -->
-            <section class="w-full max-w-4xl glass rounded-3xl p-6 md:p-8 flex flex-col gap-6">
-                <div>
-                    <h3 class="text-xl font-bold text-white">Curriculum Question Engine</h3>
-                    <p class="text-xs text-slate-400 mt-1">Both static curated past paper problems and endless randomized algebraic generators</p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-indigo-500/20">
-                        <h4 class="text-indigo-400 font-bold text-sm mb-2 flex items-center gap-2">
-                            <span>📐</span> Mathematics Methods
-                        </h4>
-                        <div class="flex flex-wrap gap-1.5">
-                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Functions & Graphs</span>
-                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Trig Functions</span>
-                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Counting & Probability</span>
-                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Exponential & Log</span>
-                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Sequences & Series</span>
-                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Rates of Change / Calculus</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-purple-500/20">
-                        <h4 class="text-purple-400 font-bold text-sm mb-2 flex items-center gap-2">
-                            <span>🔮</span> Mathematics Specialist
-                        </h4>
-                        <div class="flex flex-wrap gap-1.5">
-                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Circle Geometry</span>
-                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Combinatorics</span>
-                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Vectors in the Plane</span>
-                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Trigonometry & Identities</span>
-                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Matrices & Inverses</span>
-                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Real & Complex Numbers</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
         </div>
 
         <!-- HOME / MATCHMAKING SCREEN -->
@@ -290,7 +280,7 @@
                     <h2 class="text-2xl font-extrabold text-white">Lobby Arena</h2>
                     <p class="text-xs text-slate-400">Join or host a multiplayer match</p>
                 </div>
-                <button id="btn-home-back-landing" class="text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg bg-slate-800/80">
+                <button id="btn-home-back-landing" class="text-xs text-slate-400 hover:text-white px-2.5 py-1 rounded-lg bg-slate-800/80">
                     ← Home
                 </button>
             </div>
@@ -502,7 +492,7 @@
                         <h3 class="text-lg font-bold text-white">Topic Selection</h3>
                         <p class="text-[11px] text-slate-400">Select topics to generate match problem sets</p>
                     </div>
-                    <button id="btn-toggle-all" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-1 px-3 rounded-lg transition-colors shadow">Toggle All</button>
+                    <button id="btn-toggle-all" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-1.5 px-3.5 rounded-lg transition-colors shadow">Toggle All</button>
                 </div>
                 
                 <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar flex flex-col gap-5 max-h-[320px]">
@@ -616,7 +606,8 @@
                     </div>
                 </div>
 
-                <h2 id="game-question-text" class="text-xl md:text-2xl font-bold mb-4 flex flex-col items-center justify-center w-full min-h-[60px]">
+                <!-- Fix: Block flow for Question Text with proper line-height so MathJax stays inline -->
+                <h2 id="game-question-text" class="block text-center leading-relaxed text-xl md:text-2xl font-bold mb-4 w-full min-h-[60px] text-white">
                     <!-- Question goes here -->
                 </h2>
 
@@ -636,7 +627,7 @@
                         <input type="text" id="short-answer-input" placeholder="Type exact answer (e.g. 5, x=2, pi/3, -4)..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3.5 text-white text-base font-mono outline-none focus:border-indigo-500 shadow-inner">
                         <button id="btn-submit-short-ans" class="btn-primary text-white font-bold px-6 py-3.5 rounded-xl transition-all shadow-lg active:scale-95 text-sm">Submit</button>
                     </div>
-                    <p class="text-[11px] text-slate-400 text-left">Accepts integers, fractions, or algebraic forms (e.g. 1/2, x=5).</p>
+                    <p class="text-[11px] text-slate-400 text-left">Accepts integers, fractions, or algebraic forms (e.g. 1/2, x=5). You have 3 attempts per question.</p>
                 </div>
 
                 <!-- Stylus Scratchpad Working Out Section -->
@@ -722,10 +713,10 @@
             </div>
         </div>
 
-        <!-- Toast Notification -->
-        <div id="toast" class="fixed bottom-4 right-4 bg-slate-800/95 border border-slate-700 rounded-xl p-3.5 shadow-2xl translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3 backdrop-blur-md">
-            <span id="toast-icon">ℹ️</span>
-            <span id="toast-msg" class="text-xs font-medium text-white">Notification</span>
+        <!-- Toast Notification (Moved to bottom-center above watermarks) -->
+        <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-indigo-500/40 rounded-2xl px-6 py-3.5 shadow-2xl translate-y-28 opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center gap-3 backdrop-blur-xl max-w-md w-max">
+            <span id="toast-icon" class="text-lg">ℹ️</span>
+            <span id="toast-msg" class="text-xs font-semibold text-white">Notification</span>
         </div>
 
     </main>
@@ -741,18 +732,31 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'wace-math-rush-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        
+        let firebaseConfig = {};
+        try {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                firebaseConfig = JSON.parse(__firebase_config);
+            } else {
+                const stored = localStorage.getItem('csso_firebase_config');
+                if (stored) firebaseConfig = JSON.parse(stored);
+            }
+        } catch (e) {
+            console.warn("Config parsing note:", e);
+        }
 
         let app, db, auth;
         let isFirebaseInitialized = false;
 
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            isFirebaseInitialized = true;
-        } catch (e) {
-            console.warn("Firebase initialization note (operating in offline/fallback mode):", e);
+        if (firebaseConfig && firebaseConfig.apiKey) {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                isFirebaseInitialized = true;
+            } catch (e) {
+                console.warn("Firebase initialization note (offline mode active):", e);
+            }
         }
 
         const googleProvider = new GoogleAuthProvider();
@@ -789,7 +793,6 @@
             };
         }
 
-        // Local Storage / Cloud User Profile Model
         let currentUser = null;
         let userProfile = {
             name: "Player",
@@ -799,7 +802,6 @@
             stats: getInitialStats()
         };
 
-        // Load local profile cached backup
         try {
             const cached = localStorage.getItem('csso_user_profile');
             if (cached) {
@@ -808,7 +810,7 @@
                 if (!userProfile.stats) userProfile.stats = getInitialStats();
             }
         } catch(e) {
-            console.warn("Local storage read note:", e);
+            console.warn("Local storage note:", e);
         }
 
         let currentRoomId = null;
@@ -819,12 +821,25 @@
         let matchQuestions = [];
         let currentQuestionIndex = 0;
         let currentMultiStepIndex = 0;
+        let wrongAttemptsOnCurrentQuestion = 0;
         let localScore = 0;
         let targetScore = 20;
         let isAnswerCooldown = false;
         
-        // Memory room store fallback for offline/sandboxed multiplayer
+        // In-memory deep room storage
         const localMemoryRooms = {};
+
+        function setDeepValue(obj, path, value) {
+            const parts = path.split('.');
+            let curr = obj;
+            for (let i = 0; i < parts.length - 1; i++) {
+                if (!curr[parts[i]] || typeof curr[parts[i]] !== 'object') {
+                    curr[parts[i]] = {};
+                }
+                curr = curr[parts[i]];
+            }
+            curr[parts[parts.length - 1]] = value;
+        }
 
         const SvgBuilder = {
             polarToCartesian: (r, theta) => {
@@ -877,10 +892,13 @@
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = msg;
             document.getElementById('toast-icon').innerText = isError ? '❌' : '✅';
-            toast.classList.remove('translate-y-24', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-24', 'opacity-0');
-            }, 3000);
+            toast.classList.remove('translate-y-28', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            clearTimeout(window._toastTimeout);
+            window._toastTimeout = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-28', 'opacity-0', 'pointer-events-none');
+            }, 2800);
         }
 
         function generateRoomCode() {
@@ -940,7 +958,6 @@
             tierBadge.innerText = `${rank.title} Tier`;
             tierBadge.className = `px-2.5 py-0.5 text-xs font-bold rounded-lg border ${rank.bg}`;
 
-            // Render Avatar selector chips
             const avatarContainer = document.getElementById('avatar-selector-chips');
             avatarContainer.innerHTML = '';
             AVATARS.forEach(av => {
@@ -955,7 +972,6 @@
                 avatarContainer.appendChild(btn);
             });
 
-            // Headline stats
             const total = stats.totalAnswered || 0;
             const correct = stats.totalCorrect || 0;
             const pct = total > 0 ? ((correct / total) * 100).toFixed(1) : '0.0';
@@ -972,7 +988,6 @@
             document.getElementById('stat-elo-rating').innerText = userProfile.elo || 1200;
             document.getElementById('stat-elo-bracket').innerText = `${rank.title} Contender`;
 
-            // Render Granular Topics
             const topicsGrid = document.getElementById('profile-topics-grid');
             topicsGrid.innerHTML = '';
 
@@ -1014,12 +1029,12 @@
             
             updateGlobalUIHeaders();
 
-            if (isFirebaseInitialized && currentUser) {
+            if (isFirebaseInitialized && currentUser && !currentUser.uid.startsWith('guest_')) {
                 try {
                     const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
                     await setDoc(userRef, userProfile, { merge: true });
                 } catch(e) {
-                    console.warn("Firestore profile save skipped, preserved locally:", e);
+                    console.warn("Cloud save note:", e);
                 }
             }
         }
@@ -1578,7 +1593,7 @@
                 };
 
                 let attempts = 0;
-                while(pool.length < count && attempts < 2500) {
+                while(pool.length < count && attempts < 5000) {
                     attempts++;
                     const gen = this.generators[Math.floor(Math.random() * this.generators.length)];
                     const q = gen();
@@ -1587,6 +1602,15 @@
                         if (!pool.some(existing => getQuestionKey(existing) === qKey)) {
                             pool.push(q);
                         }
+                    }
+                }
+                
+                // If pool is smaller than count (e.g. strict single topic selection), fill with shuffled clones
+                if (pool.length < count && pool.length > 0) {
+                    const originalPool = [...pool];
+                    while (pool.length < count) {
+                        const clone = JSON.parse(JSON.stringify(originalPool[Math.floor(Math.random() * originalPool.length)]));
+                        pool.push(clone);
                     }
                 }
                 
@@ -1606,7 +1630,7 @@
         // ---------------------------------------------------------
         async function syncQuestionBankToFirestore() {
             if (!isFirebaseInitialized) {
-                showToast("Firebase offline. Using local question engine.");
+                showToast("Firebase cloud not configured. Local engine active.");
                 return;
             }
             try {
@@ -1623,7 +1647,7 @@
                 await batch.commit();
                 showToast("Question Bank synced to Firestore!");
             } catch (err) {
-                console.warn("Firestore question bank sync note:", err);
+                console.warn("Firestore sync note:", err);
                 showToast("Question bank ready (Local cache active).");
             }
         }
@@ -1641,7 +1665,7 @@
                     handleFallbackUser();
                 }
             } catch (err) {
-                console.warn("Auth initialization notice:", err);
+                console.warn("Auth init note, using local session:", err);
                 handleFallbackUser();
             }
         }
@@ -1666,21 +1690,25 @@
         }
 
         document.getElementById('btn-google-signin').addEventListener('click', async () => {
+            if (!isFirebaseInitialized || !auth) {
+                showToast("Firebase not configured for Google Auth. Playing as Guest...", true);
+                setTimeout(handleFallbackUser, 800);
+                return;
+            }
             try {
-                if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
                 await signInWithPopup(auth, googleProvider);
             } catch (error) {
-                console.warn("Google Sign-In caught error, falling back to Guest session:", error);
-                showToast("Logging in as Guest...", true);
-                if (!currentUser && isFirebaseInitialized) {
-                    try {
-                        await signInAnonymously(auth);
-                    } catch(e) {
-                        handleFallbackUser();
-                    }
-                } else if (!currentUser) {
-                    handleFallbackUser();
+                console.warn("Google Sign-In note:", error);
+                if (error.code === 'auth/unauthorized-domain') {
+                    showToast("Netlify domain not authorized in Firebase Console. Logging in as Guest...", true);
+                } else if (error.code === 'auth/popup-blocked') {
+                    showToast("Browser blocked login popup. Continuing in Guest mode...", true);
+                } else {
+                    showToast("Google sign-in unavailable: Continuing in Guest mode.", true);
                 }
+                setTimeout(() => {
+                    if (!currentUser) handleFallbackUser();
+                }, 1000);
             }
         });
 
@@ -1692,7 +1720,7 @@
                     handleFallbackUser();
                 }
             } catch (error) {
-                console.warn("Anonymous Sign-In fallback:", error);
+                console.warn("Guest signin note:", error);
                 handleFallbackUser();
             }
         });
@@ -1701,7 +1729,7 @@
             try {
                 if(isFirebaseInitialized && auth && auth.currentUser) await signOut(auth);
             } catch (error) {
-                console.warn("Sign out error", error);
+                console.warn("Sign out note", error);
             }
             currentUser = null;
             showScreen('landing');
@@ -1749,7 +1777,7 @@
                 saveUserProfile();
                 showProfileUI();
             } catch (e) {
-                console.warn("Firestore profile sync notice, using active local session:", e);
+                console.warn("Profile sync note:", e);
                 showProfileUI();
             }
         }
@@ -1785,19 +1813,39 @@
             }
         });
 
-        // Toggle All topics listener
-        let allTopicsToggled = true;
+        // ---------------------------------------------------------
+        // TOGGLE ALL & TOPIC SYNC LOGIC
+        // ---------------------------------------------------------
         document.getElementById('btn-toggle-all').addEventListener('click', async () => {
             if(!isHost) return;
-            allTopicsToggled = !allTopicsToggled;
-            document.querySelectorAll('.topic-cb').forEach(cb => {
-                cb.checked = allTopicsToggled;
+            const checkboxes = document.querySelectorAll('.topic-cb');
+            const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+            // If any checked -> turn all off. If none checked -> turn all on.
+            const newState = !anyChecked;
+            checkboxes.forEach(cb => {
+                cb.checked = newState;
             });
             await updateRoomSettings();
         });
 
+        document.querySelectorAll('.topic-cb').forEach(cb => {
+            cb.addEventListener('change', updateRoomSettings);
+        });
+        document.getElementById('target-score-select').addEventListener('change', updateRoomSettings);
+
+        async function updateRoomSettings() {
+            if(!isHost || !currentRoomId) return;
+            const topics = Array.from(document.querySelectorAll('.topic-cb:checked')).map(cb => cb.value);
+            const tScore = parseInt(document.getElementById('target-score-select').value);
+            
+            await updateRoomInDB(currentRoomId, {
+                'settings.topics': topics,
+                'settings.targetScore': tScore
+            });
+        }
+
         // ---------------------------------------------------------
-        // HYBRID ROOM MANAGEMENT (FIREBASE + LOCAL MEMORY FALLBACK)
+        // HYBRID ROOM MANAGEMENT (FIREBASE + LOCAL MEMORY DEEP SET)
         // ---------------------------------------------------------
         
         async function createRoomInDB(roomId, initialData) {
@@ -1807,7 +1855,7 @@
                 const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
                 await setDoc(roomRef, initialData);
             } catch (e) {
-                console.warn("Firestore room create notice (running local session):", e);
+                console.warn("Room create note (running local session):", e);
             }
         }
 
@@ -1815,11 +1863,7 @@
             if (localMemoryRooms[roomId]) {
                 Object.keys(updateData).forEach(key => {
                     if (key.includes('.')) {
-                        const parts = key.split('.');
-                        if (parts.length === 3 && parts[0] === 'players') {
-                            if (!localMemoryRooms[roomId].players[parts[1]]) localMemoryRooms[roomId].players[parts[1]] = {};
-                            localMemoryRooms[roomId].players[parts[1]][parts[2]] = updateData[key];
-                        }
+                        setDeepValue(localMemoryRooms[roomId], key, updateData[key]);
                     } else {
                         localMemoryRooms[roomId][key] = updateData[key];
                     }
@@ -1830,7 +1874,7 @@
                 const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
                 await updateDoc(roomRef, updateData);
             } catch (e) {
-                console.warn("Firestore room update notice:", e);
+                console.warn("Room update note:", e);
             }
         }
 
@@ -1842,7 +1886,7 @@
                 const snap = await getDoc(roomRef);
                 if (snap.exists()) return snap.data();
             } catch (e) {
-                console.warn("Firestore room get notice:", e);
+                console.warn("Room get note:", e);
             }
             return null;
         }
@@ -1923,7 +1967,6 @@
                     document.getElementById('settings-overlay').classList.remove('hidden');
                 }
 
-                // Listen to room updates
                 if (isFirebaseInitialized) {
                     const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
                     roomUnsubscribe = onSnapshot(roomRef, (snap) => {
@@ -1949,7 +1992,6 @@
 
             targetScore = (roomData.settings && roomData.settings.targetScore) ? roomData.settings.targetScore : 20;
 
-            // Render Player List
             const playersList = document.getElementById('lobby-players-list');
             playersList.innerHTML = '';
             
@@ -1977,7 +2019,6 @@
                 `;
             });
 
-            // If not host, sync settings visually
             if (!isHost && roomData.settings) {
                 const topics = roomData.settings.topics || [];
                 document.querySelectorAll('.topic-cb').forEach(cb => {
@@ -1988,7 +2029,6 @@
                 }
             }
 
-            // Status transitions
             if (roomData.status === 'in_game') {
                 if (!isGameStarted) {
                     startGame(roomData);
@@ -2026,32 +2066,8 @@
         document.getElementById('btn-leave-lobby').addEventListener('click', leaveRoom);
         document.getElementById('btn-return-home').addEventListener('click', leaveRoom);
 
-        document.querySelectorAll('.topic-cb').forEach(cb => {
-            cb.addEventListener('change', updateRoomSettings);
-        });
-        document.getElementById('target-score-select').addEventListener('change', updateRoomSettings);
-
-        async function updateRoomSettings() {
-            if(!isHost || !currentRoomId) return;
-            let topics = Array.from(document.querySelectorAll('.topic-cb:checked')).map(cb => cb.value);
-            
-            // Bug 4 guard: Ensure at least one topic is selected
-            if (topics.length === 0) {
-                showToast("At least one topic is required. Resetting to all topics.", true);
-                document.querySelectorAll('.topic-cb').forEach(cb => cb.checked = true);
-                topics = Array.from(document.querySelectorAll('.topic-cb:checked')).map(cb => cb.value);
-            }
-
-            const tScore = parseInt(document.getElementById('target-score-select').value);
-            
-            await updateRoomInDB(currentRoomId, {
-                'settings.topics': topics,
-                'settings.targetScore': tScore
-            });
-        }
-
         // ---------------------------------------------------------
-        // GAME ENGINE & MULTI-STEP LOGIC
+        // GAME ENGINE & 3-STRIKE QUESTION SKIPPING SYSTEM
         // ---------------------------------------------------------
 
         document.getElementById('btn-start-game').addEventListener('click', async () => {
@@ -2059,13 +2075,20 @@
             const roomData = await getRoomFromDB(currentRoomId);
             if (!roomData) return;
 
-            let topics = roomData.settings?.topics || [];
-            if (!topics || topics.length === 0) {
-                topics = ALL_WACE_TOPICS;
+            // Delayed Check: Ensure at least one topic is selected when clicking Start Game
+            const checkedTopics = Array.from(document.querySelectorAll('.topic-cb:checked')).map(cb => cb.value);
+            if (checkedTopics.length === 0) {
+                showToast("⚠️ At least one topic must be selected to start the game!", true);
+                return;
             }
 
-            // Generate Match Set using robust deduplicated generator pool
-            matchQuestions = qdb.generateMatchSet(topics, 50);
+            // Sync confirmed topic list
+            await updateRoomInDB(currentRoomId, {
+                'settings.topics': checkedTopics
+            });
+
+            // Generate Match Set strictly from checked topics
+            matchQuestions = qdb.generateMatchSet(checkedTopics, 50);
 
             await updateRoomInDB(currentRoomId, {
                 status: 'in_game',
@@ -2084,6 +2107,7 @@
             matchQuestions = roomData.questions || [];
             currentQuestionIndex = 0;
             currentMultiStepIndex = 0;
+            wrongAttemptsOnCurrentQuestion = 0;
             localScore = 0;
             document.getElementById('game-local-score').innerText = '0';
             
@@ -2157,7 +2181,6 @@
             
             const isWinner = sortedUIDs[0] === currentUser?.uid;
             
-            // Record match result stats
             if (!userProfile.stats) userProfile.stats = getInitialStats();
             userProfile.stats.matchesPlayed = (userProfile.stats.matchesPlayed || 0) + 1;
             
@@ -2201,7 +2224,7 @@
         }
 
         // ---------------------------------------------------------
-        // SCRATCHPAD WORKING OUT MODULE
+        // SCRATCHPAD MODULE
         // ---------------------------------------------------------
         let scratchpadCtx, canvas;
         let isScratchpadDrawing = false;
@@ -2366,7 +2389,7 @@
         }
 
         // ---------------------------------------------------------
-        // QUESTION ANSWERING & BUG 1 FIX (CRASH PROTECTION)
+        // QUESTION ANSWERING & 3-STRIKES LOGIC
         // ---------------------------------------------------------
 
         function isAnswerMatching(userInput, acceptableAnswers) {
@@ -2401,7 +2424,6 @@
             const mcqGrid = document.getElementById('game-options-grid');
             const shortAnsContainer = document.getElementById('game-short-answer-container');
 
-            // CRITICAL BUG 1 GUARD: Safe Multi-step index boundary verification
             if (q.type === 'multi_step' && Array.isArray(q.steps)) {
                 if (!q.steps[currentMultiStepIndex]) {
                     currentMultiStepIndex = 0;
@@ -2493,7 +2515,7 @@
 
             options.forEach((opt, idx) => {
                 const btn = document.createElement('button');
-                btn.className = "bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 hover:border-indigo-500/50 p-5 rounded-2xl font-bold text-sm text-white transition-all transform hover:-translate-y-0.5 shadow-lg text-center flex items-center justify-center min-h-[75px]";
+                btn.className = "bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 hover:border-indigo-500/50 p-5 rounded-2xl font-bold text-sm text-white transition-all transform hover:-translate-y-0.5 shadow-lg text-center block w-full min-h-[75px] leading-relaxed";
                 btn.innerHTML = opt;
                 btn.onclick = () => handleStepOrMCQSubmission(idx === ansIndex, btn);
                 grid.appendChild(btn);
@@ -2526,7 +2548,10 @@
             isAnswerCooldown = true;
 
             const q = matchQuestions[currentQuestionIndex];
-            if (!q) return;
+            if (!q) {
+                isAnswerCooldown = false;
+                return;
+            }
 
             // Track stats live in user profile
             if (!userProfile.stats) userProfile.stats = getInitialStats();
@@ -2539,51 +2564,105 @@
             userProfile.stats.topicStats[q.topic].answered = (userProfile.stats.topicStats[q.topic].answered || 0) + 1;
 
             if (isCorrect) {
+                wrongAttemptsOnCurrentQuestion = 0;
                 userProfile.stats.totalCorrect = (userProfile.stats.totalCorrect || 0) + 1;
                 userProfile.stats.topicStats[q.topic].correct = (userProfile.stats.topicStats[q.topic].correct || 0) + 1;
                 
-                showToast("Correct Answer!");
-                
+                if (sourceElement && sourceElement.classList) {
+                    sourceElement.classList.add('ring-4', 'ring-emerald-400', 'bg-emerald-600/60');
+                }
+
                 if (q.type === 'multi_step' && q.steps && currentMultiStepIndex < q.steps.length - 1) {
+                    showToast("✅ Correct Step! Advancing to next step...");
                     currentMultiStepIndex++;
                     setTimeout(() => {
                         isAnswerCooldown = false;
                         renderQuestion();
-                    }, 600);
+                    }, 650);
                     return;
                 }
 
+                showToast("✅ Correct Answer! (+1 point)");
                 localScore += 1;
                 document.getElementById('game-local-score').innerText = localScore;
                 currentMultiStepIndex = 0;
-            } else {
-                showToast("Incorrect Answer", true);
-                // CRITICAL BUG 1 FIX: Reset multi-step index to 0 when transitioning away on wrong answer
-                currentMultiStepIndex = 0;
-            }
 
-            // Sync score to Room DB
-            if (currentRoomId && currentUser) {
-                await updateRoomInDB(currentRoomId, {
-                    [`players.${currentUser.uid}.score`]: localScore
-                });
-            }
-
-            setTimeout(() => {
-                isAnswerCooldown = false;
-                currentMultiStepIndex = 0;
-                currentQuestionIndex++;
-                
-                if (localScore >= targetScore) {
-                    document.getElementById('game-question-text').innerHTML = "Goal Reached! Calculating final rankings...";
-                    document.getElementById('game-options-grid').innerHTML = '';
-                    document.getElementById('game-short-answer-container').classList.add('hidden');
-                    document.getElementById('game-visual-container').innerHTML = '';
-                    document.getElementById('multistep-progress-container').classList.add('hidden');
-                } else {
-                    renderQuestion();
+                // Sync score to Room DB
+                if (currentRoomId && currentUser) {
+                    await updateRoomInDB(currentRoomId, {
+                        [`players.${currentUser.uid}.score`]: localScore
+                    });
                 }
-            }, 1000);
+
+                setTimeout(() => {
+                    isAnswerCooldown = false;
+                    currentQuestionIndex++;
+                    
+                    if (localScore >= targetScore) {
+                        document.getElementById('game-question-text').innerHTML = "Goal Reached! Calculating final rankings...";
+                        document.getElementById('game-options-grid').innerHTML = '';
+                        document.getElementById('game-short-answer-container').classList.add('hidden');
+                        document.getElementById('game-visual-container').innerHTML = '';
+                        document.getElementById('multistep-progress-container').classList.add('hidden');
+                    } else {
+                        renderQuestion();
+                    }
+                }, 850);
+
+            } else {
+                wrongAttemptsOnCurrentQuestion++;
+
+                if (sourceElement && sourceElement.classList) {
+                    sourceElement.classList.add('ring-4', 'ring-rose-500', 'bg-rose-900/60');
+                    setTimeout(() => {
+                        sourceElement.classList.remove('ring-4', 'ring-rose-500', 'bg-rose-900/60');
+                    }, 600);
+                }
+
+                const gameScreen = document.getElementById('screen-game');
+                if (gameScreen) {
+                    gameScreen.classList.add('animate-shake');
+                    setTimeout(() => gameScreen.classList.remove('animate-shake'), 450);
+                }
+
+                // 3-Attempt Question Skipping Rule
+                if (wrongAttemptsOnCurrentQuestion < 3) {
+                    const attemptsRemaining = 3 - wrongAttemptsOnCurrentQuestion;
+                    showToast(`❌ Incorrect! ${attemptsRemaining} attempt${attemptsRemaining > 1 ? 's' : ''} left. Try again!`, true);
+                    
+                    setTimeout(() => {
+                        isAnswerCooldown = false;
+                        if (q.type === 'short_answer') {
+                            const input = document.getElementById('short-answer-input');
+                            if (input) {
+                                input.value = '';
+                                input.focus();
+                            }
+                        }
+                    }, 500);
+
+                } else {
+                    // 3 consecutive strikes -> skip question
+                    showToast("❌ 3 incorrect attempts. Skipping question...", true);
+                    wrongAttemptsOnCurrentQuestion = 0;
+                    currentMultiStepIndex = 0;
+
+                    setTimeout(() => {
+                        isAnswerCooldown = false;
+                        currentQuestionIndex++;
+                        
+                        if (localScore >= targetScore) {
+                            document.getElementById('game-question-text').innerHTML = "Goal Reached! Calculating final rankings...";
+                            document.getElementById('game-options-grid').innerHTML = '';
+                            document.getElementById('game-short-answer-container').classList.add('hidden');
+                            document.getElementById('game-visual-container').innerHTML = '';
+                            document.getElementById('multistep-progress-container').classList.add('hidden');
+                        } else {
+                            renderQuestion();
+                        }
+                    }, 1200);
+                }
+            }
         }
 
         // Initialize scratchpad canvas on script execution
