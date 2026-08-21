@@ -4,7 +4,8 @@
 import { 
     loadLocalProfile, saveLocalProfile, isFirebaseAvailable, auth, db, provider, 
     signInWithPopup, signOut, doc, setDoc, getDoc, updateDoc, serverTimestamp,
-    saveRoomToDB, getRoomFromDB, updateRoomInDB, subscribeToRoom, LOCAL_STORAGE_KEY_ROOMS
+    saveRoomToDB, getRoomFromDB, updateRoomInDB, subscribeToRoom, LOCAL_STORAGE_KEY_ROOMS,
+    resolveProofQueryInRoom
 } from './firebase.js';
 import { questionDB } from './questions/questionDB.js';
 import { GameEngine } from './game.js';
@@ -12,7 +13,7 @@ import {
     showToast, showScreen, renderProfileDashboard, updateNavbarProfileBadge, 
     AVAILABLE_AVATARS, initScratchpad 
 } from './ui.js';
-import { setGeminiApiKey, getGeminiApiKey } from './gemini.js';
+import { setGeminiApiKey, getGeminiApiKey, evaluateProofStepWithGemini } from './gemini.js';
 
 // Application State Object
 const state = {
@@ -20,7 +21,8 @@ const state = {
     userProfile: loadLocalProfile(),
     currentRoomId: null,
     roomUnsubscribe: null,
-    roomData: null
+    roomData: null,
+    processingQueryIds: new Set()
 };
 
 // Initialize Game Engine
@@ -178,9 +180,9 @@ document.getElementById('btn-save-gemini-key')?.addEventListener('click', () => 
     const key = document.getElementById('input-gemini-key')?.value.trim();
     setGeminiApiKey(key);
     if (key) {
-        showToast("✅ Gemini 3.7 Flash AI Proof Evaluator Activated!");
+        showToast("\u2705 Gemini 3.7 Flash AI Proof Evaluator Activated!");
     } else {
-        showToast("Gemini API Key removed. Using standard rule matcher.");
+        showToast("Gemini API Key removed. Proofs will require a key to host or use offline matching.");
     }
 });
 
@@ -225,6 +227,15 @@ function setupAvatarPicker() {
 // ---------------------------------------------------------
 let selectedTargetScore = 10;
 
+function getSelectedFormats() {
+    return {
+        mcq: document.getElementById('cb-format-mcq')?.checked ?? true,
+        short_answer: document.getElementById('cb-format-short-ans')?.checked ?? true,
+        multi_step: document.getElementById('cb-format-multi-step')?.checked ?? true,
+        proofs: document.getElementById('cb-format-proofs')?.checked ?? true
+    };
+}
+
 function setupLobbyControls() {
     document.querySelectorAll('.target-score-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -250,6 +261,19 @@ function setupLobbyControls() {
             return;
         }
 
+        const formats = getSelectedFormats();
+        if (!formats.mcq && !formats.short_answer && !formats.multi_step && !formats.proofs) {
+            showToast("Please select at least one question format type!", true);
+            return;
+        }
+
+        // Host API Key requirement rule: only required if Proofs are selected!
+        const apiKey = getGeminiApiKey();
+        if (formats.proofs && !apiKey) {
+            showToast("\u26a0\ufe0f Gemini API Key required to host Rigorous Proofs! Set key in Profile or uncheck 'Rigorous Proofs' to host without key.", true);
+            return;
+        }
+
         const roomId = Math.floor(100000 + Math.random() * 900000).toString();
         const initialRoom = {
             id: roomId,
@@ -257,7 +281,8 @@ function setupLobbyControls() {
             status: 'waiting',
             settings: {
                 targetScore: selectedTargetScore,
-                topics: checkedTopics
+                topics: checkedTopics,
+                formats: formats
             },
             players: {
                 [state.currentUser.uid]: {
@@ -269,6 +294,7 @@ function setupLobbyControls() {
                 }
             },
             questions: [],
+            pendingQueries: {},
             createdAt: Date.now()
         };
 
@@ -299,9 +325,15 @@ function setupLobbyControls() {
     document.getElementById('btn-start-solo-practice')?.addEventListener('click', () => {
         const checkedTopics = Array.from(document.querySelectorAll('.topic-cb:checked')).map(cb => cb.value);
         const activeTopics = checkedTopics.length > 0 ? checkedTopics : null;
+        const formats = getSelectedFormats();
+
+        if (!formats.mcq && !formats.short_answer && !formats.multi_step && !formats.proofs) {
+            showToast("Please select at least one question format!", true);
+            return;
+        }
 
         state.currentRoomId = null;
-        const questions = questionDB.generateMatchSet(activeTopics, 40);
+        const questions = questionDB.generateMatchSet(activeTopics, 40, formats);
 
         document.getElementById('live-progress-bars-container').innerHTML = `
             <div class="space-y-1">
@@ -365,7 +397,7 @@ function setupLobbyControls() {
                 }));
             }
             await Promise.all(promises);
-            showToast("✅ Cloud sync completed successfully!");
+            showToast("\u2705 Cloud sync completed successfully!");
         } catch(e) {
             showToast("Sync failed: " + e.message, true);
         }
@@ -373,7 +405,7 @@ function setupLobbyControls() {
 }
 
 // ---------------------------------------------------------
-// ROOM LIFECYCLE
+// ROOM LIFECYCLE & HOST-DELEGATED QUERY PROCESSING
 // ---------------------------------------------------------
 async function joinRoom(roomId) {
     state.currentRoomId = roomId;
@@ -402,8 +434,32 @@ function enterRoom(roomId) {
     showScreen('waiting');
 }
 
-function handleRoomUpdate(data) {
+async function handleRoomUpdate(data) {
     if (!data) return;
+
+    // HOST-DELEGATED QUERY PROCESSING LOOP
+    // If this client is the room host, process any pending proof evaluation tickets from other players
+    const isHost = data.hostUid === state.currentUser?.uid;
+    if (isHost && data.pendingQueries) {
+        const queryEntries = Object.entries(data.pendingQueries);
+        for (const [queryId, query] of queryEntries) {
+            if (query && query.status === 'pending' && !state.processingQueryIds.has(queryId)) {
+                state.processingQueryIds.add(queryId);
+                evaluateProofStepWithGemini({
+                    problemContext: query.problemContext,
+                    stepPrompt: query.stepPrompt,
+                    studentAnswer: query.studentAnswer,
+                    expectedAnswerGuidelines: query.expectedAnswerGuidelines,
+                    acceptableAnswers: query.acceptableAnswers
+                }).then(async (evalResult) => {
+                    await resolveProofQueryInRoom(data.id, queryId, evalResult);
+                    state.processingQueryIds.delete(queryId);
+                }).catch(() => {
+                    state.processingQueryIds.delete(queryId);
+                });
+            }
+        }
+    }
 
     const players = Object.values(data.players || {});
     document.getElementById('waiting-player-count').innerText = players.length;
@@ -416,7 +472,7 @@ function handleRoomUpdate(data) {
         item.className = "flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800";
         item.innerHTML = `
             <div class="flex items-center space-x-3">
-                <span class="text-xl">${p.avatar || '🧮'}</span>
+                <span class="text-xl">${p.avatar || '\ud83e\uddee'}</span>
                 <div>
                     <span class="text-xs font-bold text-white">${p.displayName}</span>
                     ${p.isHost ? '<span class="ml-2 text-[10px] font-bold text-amber-400 uppercase bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">Host</span>' : ''}
@@ -427,7 +483,6 @@ function handleRoomUpdate(data) {
         playerListEl.appendChild(item);
     });
 
-    const isHost = data.hostUid === state.currentUser?.uid;
     const startBtn = document.getElementById('btn-start-game');
     if (startBtn) startBtn.style.display = isHost ? 'flex' : 'none';
 
@@ -452,7 +507,7 @@ function handleRoomUpdate(data) {
             bar.className = "space-y-1";
             bar.innerHTML = `
                 <div class="flex justify-between text-xs font-semibold">
-                    <span class="${isMe ? 'text-indigo-400 font-bold' : 'text-slate-300'}">${p.avatar || '🧮'} ${p.displayName} ${isMe ? '(You)' : ''}</span>
+                    <span class="${isMe ? 'text-indigo-400 font-bold' : 'text-slate-300'}">${p.avatar || '\ud83e\uddee'} ${p.displayName} ${isMe ? '(You)' : ''}</span>
                     <span class="font-mono ${isMe ? 'text-indigo-400' : 'text-slate-400'}">${p.score} / ${data.settings?.targetScore || 10}</span>
                 </div>
                 <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
@@ -474,12 +529,14 @@ document.getElementById('btn-start-game')?.addEventListener('click', async () =>
     if (!state.currentRoomId || !state.roomData) return;
     const checkedTopics = Array.from(document.querySelectorAll('.topic-cb:checked')).map(cb => cb.value);
     const activeTopics = (checkedTopics && checkedTopics.length > 0) ? checkedTopics : state.roomData.settings?.topics;
+    const activeFormats = state.roomData.settings?.formats || getSelectedFormats();
 
-    const generated = questionDB.generateMatchSet(activeTopics, 50);
+    const generated = questionDB.generateMatchSet(activeTopics, 50, activeFormats);
     await updateRoomInDB(state.currentRoomId, {
         status: 'in_game',
         questions: generated,
-        'settings.topics': activeTopics
+        'settings.topics': activeTopics,
+        'settings.formats': activeFormats
     });
 });
 
