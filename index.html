@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WACE Math Rush</title>
+    <title>WACE Math Rush - Competitive Ranked Revision Arena</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     
     <!-- MathJax Configuration for LaTeX -->
     <script>
@@ -23,77 +23,284 @@
 
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #090d16;
             color: #f8fafc;
             overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.06) 0%, transparent 60%);
+            background-attachment: fixed;
         }
         
-        /* Custom Animations */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); }
-            75% { transform: translateX(-5px); }
-        }
-        .animate-shake {
-            animation: shake 0.4s ease-in-out;
-        }
-
-        .progress-bar-fill {
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
         }
 
         /* Glassmorphism utilities */
         .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        /* Fancy Button */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* Gradient utilities */
         .btn-primary {
             background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 12px 24px -6px rgba(99, 102, 241, 0.45);
         }
         .btn-primary:active {
             transform: translateY(1px);
         }
-        
+
+        .btn-secondary {
+            background: rgba(51, 65, 85, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
+        }
+        .btn-secondary:hover {
+            background: rgba(71, 85, 105, 0.9);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
         .hide { display: none !important; }
         
-        /* MathJax Adjustments for dark theme */
+        .progress-bar-fill {
+            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.7);
+        }
+
+        /* MathJax adjustments */
         mjx-container { color: #f8fafc !important; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body class="min-h-screen flex flex-col items-center justify-between p-3 md:p-6">
 
-    <div id="app-container" class="w-full max-w-4xl flex flex-col items-center">
-        
-        <!-- Loading / Auth Screen -->
-        <div id="screen-loading" class="flex flex-col items-center justify-center text-center">
-            <div class="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <h2 class="text-2xl font-bold text-indigo-400">Connecting to Server...</h2>
-            <p class="text-slate-400 mt-2">Authenticating and loading modules</p>
+    <!-- Global App Top Bar -->
+    <header class="w-full max-w-5xl flex justify-between items-center mb-6 px-2 py-1">
+        <div class="flex items-center gap-3 cursor-pointer" id="brand-logo-btn">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-sky-400 flex items-center justify-center text-xl shadow-lg shadow-indigo-500/30 font-extrabold">
+                ∑
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold tracking-tight text-white flex items-center gap-1.5">
+                    WACE <span class="text-gradient">Math Rush</span>
+                </h1>
+                <p class="text-[11px] text-slate-400 font-medium">Methods & Specialist Arena</p>
+            </div>
         </div>
 
-        <!-- Home Screen -->
-        <div id="screen-home" class="hide w-full max-w-md glass rounded-3xl p-8 shadow-2xl flex flex-col gap-6">
-            <div class="text-center">
-                <h1 class="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">Math Rush</h1>
-                <p class="text-slate-400 text-sm">WACE Methods & Specialist</p>
+        <nav class="flex items-center gap-2 md:gap-3">
+            <button id="nav-landing-btn" class="text-xs md:text-sm font-semibold px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors">
+                Home
+            </button>
+            <button id="nav-profile-btn" class="text-xs md:text-sm font-semibold px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-indigo-300 flex items-center gap-2 transition-colors shadow-sm">
+                <span id="nav-avatar-display">🦊</span>
+                <span id="nav-username-display" class="hidden sm:inline">Profile</span>
+                <span id="nav-elo-display" class="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded text-[11px] font-mono font-bold">1200</span>
+            </button>
+        </nav>
+    </header>
+
+    <main id="app-container" class="w-full max-w-5xl flex flex-col items-center flex-1">
+        
+        <!-- Loading Screen -->
+        <div id="screen-loading" class="flex flex-col items-center justify-center text-center py-20">
+            <div class="relative w-20 h-20 mb-6">
+                <div class="absolute inset-0 rounded-full border-4 border-indigo-500/20"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-2xl">⚡</div>
+            </div>
+            <h2 class="text-2xl font-bold text-indigo-400">Loading Arena...</h2>
+            <p class="text-slate-400 mt-2 text-sm">Synchronizing question bank and live services</p>
+        </div>
+
+        <!-- LANDING PAGE SCREEN -->
+        <div id="screen-landing" class="hide w-full flex flex-col items-center gap-12 py-4">
+            
+            <!-- Hero Banner -->
+            <section class="w-full max-w-4xl text-center flex flex-col items-center gap-6 pt-4 pb-2">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass text-xs font-semibold text-indigo-300 border border-indigo-500/30 shadow-inner">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>WACE Year 11 & 12 Curriculum Synchronized</span>
+                </div>
+
+                <h1 class="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight max-w-3xl leading-[1.1]">
+                    The Ultimate Ranked <br class="hidden sm:block">
+                    <span class="text-gradient">Math Revision Arena</span>
+                </h1>
+
+                <p class="text-slate-300 text-base sm:text-lg max-w-2xl font-normal leading-relaxed">
+                    Compete in real-time sprints for <strong class="text-white">Mathematics Methods</strong> and <strong class="text-white">Specialist</strong>. Climb the Elo ladder, master multi-step problem solving, and track granular topic analytics.
+                </p>
+
+                <div class="flex flex-wrap items-center justify-center gap-4 mt-2">
+                    <button id="btn-landing-play-now" class="btn-primary px-8 py-4 rounded-2xl font-bold text-lg text-white shadow-xl flex items-center gap-3">
+                        <span>⚔️ Enter Arena / Play Now</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                    </button>
+                    <button id="btn-landing-view-profile" class="btn-secondary px-6 py-4 rounded-2xl font-bold text-base text-slate-200 shadow-md flex items-center gap-2">
+                        <span>📊 View My Stats & Profile</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Quick Player Summary Teaser -->
+            <section class="w-full max-w-4xl glass rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6 shadow-2xl border border-white/10">
+                <div class="flex items-center gap-4">
+                    <div id="landing-teaser-avatar" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-3xl shadow-lg">
+                        🦊
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span id="landing-teaser-name" class="text-xl font-bold text-white">Player</span>
+                            <span id="landing-teaser-rank-badge" class="px-2 py-0.5 text-xs font-bold rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">Silver II</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">Rating: <span id="landing-teaser-elo" class="font-mono text-indigo-300 font-bold">1200 Elo</span></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 w-full md:w-auto text-center divide-x divide-slate-700/60">
+                    <div class="px-3">
+                        <p class="text-xs text-slate-400 font-medium">Questions</p>
+                        <p id="landing-teaser-questions" class="text-lg font-extrabold text-white font-mono">0</p>
+                    </div>
+                    <div class="px-3">
+                        <p class="text-xs text-slate-400 font-medium">Accuracy</p>
+                        <p id="landing-teaser-accuracy" class="text-lg font-extrabold text-emerald-400 font-mono">0%</p>
+                    </div>
+                    <div class="px-3">
+                        <p class="text-xs text-slate-400 font-medium">W / L</p>
+                        <p id="landing-teaser-wl" class="text-lg font-extrabold text-purple-400 font-mono">0 / 0</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Feature Showcase Grid -->
+            <section class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="glass-card rounded-2xl p-6 flex flex-col gap-3 border border-slate-700/50">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-2xl text-indigo-400">
+                        ⚡
+                    </div>
+                    <h3 class="text-lg font-bold text-white">Live Multiplayer Sprints</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Compete in real-time racebars against friends or classmates with instant synchronization and target-point sprints.
+                    </p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6 flex flex-col gap-3 border border-slate-700/50">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-2xl text-purple-400">
+                        ✏️
+                    </div>
+                    <h3 class="text-lg font-bold text-white">Stylus Canvas Scratchpad</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Built-in working out board with stylus pressure sensitivity, fine/bold pens, undo stack, and live LaTeX rendering.
+                    </p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6 flex flex-col gap-3 border border-slate-700/50">
+                    <div class="w-12 h-12 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-2xl text-sky-400">
+                        📊
+                    </div>
+                    <h3 class="text-lg font-bold text-white">In-Depth Topic Mastery</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Track your performance across all 12 WACE subjects. Identify weak spots in calculus, vectors, matrices, or complex roots.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Curriculum Topics Overview -->
+            <section class="w-full max-w-4xl glass rounded-3xl p-6 md:p-8 flex flex-col gap-6">
+                <div>
+                    <h3 class="text-xl font-bold text-white">Curriculum Question Engine</h3>
+                    <p class="text-xs text-slate-400 mt-1">Both static curated past paper problems and endless randomized algebraic generators</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-indigo-500/20">
+                        <h4 class="text-indigo-400 font-bold text-sm mb-2 flex items-center gap-2">
+                            <span>📐</span> Mathematics Methods
+                        </h4>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Functions & Graphs</span>
+                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Trig Functions</span>
+                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Counting & Probability</span>
+                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Exponential & Log</span>
+                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Sequences & Series</span>
+                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Rates of Change / Calculus</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-purple-500/20">
+                        <h4 class="text-purple-400 font-bold text-sm mb-2 flex items-center gap-2">
+                            <span>🔮</span> Mathematics Specialist
+                        </h4>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Circle Geometry</span>
+                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Combinatorics</span>
+                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Vectors in the Plane</span>
+                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Trigonometry & Identities</span>
+                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Matrices & Inverses</span>
+                            <span class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md">Real & Complex Numbers</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- HOME / MATCHMAKING SCREEN -->
+        <div id="screen-home" class="hide w-full max-w-md glass rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col gap-6">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-700/60">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-white">Lobby Arena</h2>
+                    <p class="text-xs text-slate-400">Join or host a multiplayer match</p>
+                </div>
+                <button id="btn-home-back-landing" class="text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg bg-slate-800/80">
+                    ← Home
+                </button>
             </div>
 
-            <!-- Login Section -->
-            <div id="login-section" class="flex flex-col gap-4 hidden">
-                <p class="text-slate-400 text-sm text-center mb-2">Sign in to save your stats and play multiplayer.</p>
-                <button id="btn-google-signin" class="bg-white text-slate-800 hover:bg-slate-100 transition-colors w-full py-3 rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-md">
-                    <svg class="w-6 h-6" viewBox="0 0 24 24">
+            <!-- Login Section (when unauthenticated) -->
+            <div id="login-section" class="flex flex-col gap-4">
+                <p class="text-slate-300 text-xs text-center">Sign in to save your stats to Firebase cloud and compete on leaderboards.</p>
+                
+                <button id="btn-google-signin" class="bg-white text-slate-800 hover:bg-slate-100 transition-all w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-3 shadow-md">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -101,265 +308,389 @@
                     </svg>
                     Sign in with Google
                 </button>
-                <div class="relative flex py-2 items-center">
-                    <div class="flex-grow border-t border-slate-600"></div>
-                    <span class="flex-shrink-0 mx-4 text-slate-500 text-sm font-semibold">OR</span>
-                    <div class="flex-grow border-t border-slate-600"></div>
+                
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-700"></div>
+                    <span class="flex-shrink-0 mx-3 text-slate-500 text-xs font-semibold">OR</span>
+                    <div class="flex-grow border-t border-slate-700"></div>
                 </div>
-                <button id="btn-anon-signin" class="bg-slate-700 hover:bg-slate-600 transition-colors w-full py-3 rounded-xl font-bold text-white shadow-md">
-                    Play as Guest
+
+                <button id="btn-anon-signin" class="btn-secondary w-full py-3 rounded-xl font-bold text-sm text-slate-200">
+                    Play as Guest (Local Session)
                 </button>
             </div>
 
-            <!-- Profile & Play Section -->
-            <div id="profile-section" class="flex flex-col gap-6 hidden">
-                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700 flex justify-between items-center relative">
-                    <button id="btn-signout" class="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-transform hover:scale-110" title="Sign Out">✕</button>
-                    <div>
-                        <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Player Name</p>
-                        <input type="text" id="player-name-input" class="bg-transparent text-xl font-bold text-white outline-none w-32" value="Player">
+            <!-- Profile & Matchmaking Controls (when authenticated) -->
+            <div id="profile-section" class="flex flex-col gap-5 hidden">
+                <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700 flex justify-between items-center relative">
+                    <button id="btn-signout" class="absolute -top-2.5 -right-2.5 bg-rose-600 hover:bg-rose-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-transform hover:scale-110" title="Sign Out">✕</button>
+                    
+                    <div class="flex items-center gap-3">
+                        <div id="home-avatar-btn" class="w-12 h-12 rounded-xl bg-indigo-600/40 border border-indigo-400/30 flex items-center justify-center text-2xl cursor-pointer hover:scale-105 transition-transform" title="Customize Profile">
+                            <span id="home-avatar-display">🦊</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Player Name</p>
+                            <input type="text" id="player-name-input" class="bg-transparent text-lg font-bold text-white outline-none w-36 focus:border-b border-indigo-400" value="Player">
+                        </div>
                     </div>
+
                     <div class="text-right">
-                        <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Rating (Elo)</p>
-                        <p id="player-elo-display" class="text-xl font-bold text-purple-400">1200</p>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Rating</p>
+                        <p id="player-elo-display" class="text-lg font-mono font-bold text-indigo-300">1200 Elo</p>
                     </div>
-                </div>
-
-                <button id="btn-create-room" class="btn-primary w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg">
-                    Create Room
-                </button>
-
-                <div class="relative flex py-2 items-center">
-                    <div class="flex-grow border-t border-slate-600"></div>
-                    <span class="flex-shrink-0 mx-4 text-slate-500 text-sm font-semibold">OR</span>
-                    <div class="flex-grow border-t border-slate-600"></div>
                 </div>
 
                 <div class="flex gap-2">
-                    <input type="text" id="join-room-input" placeholder="Room Code" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white font-mono text-center outline-none focus:border-indigo-500 uppercase" maxlength="6">
-                    <button id="btn-join-room" class="bg-slate-700 hover:bg-slate-600 transition-colors px-6 py-3 rounded-xl font-bold text-white">
+                    <button id="btn-open-full-profile" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-800/80 hover:bg-slate-700 text-indigo-300 border border-slate-700 transition-colors flex items-center justify-center gap-1.5">
+                        <span>📊 Detailed Stats & Customization</span>
+                    </button>
+                </div>
+
+                <button id="btn-create-room" class="btn-primary w-full py-4 rounded-xl font-bold text-base text-white shadow-lg flex items-center justify-center gap-2">
+                    <span>👑 Create Multiplayer Room</span>
+                </button>
+
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-700"></div>
+                    <span class="flex-shrink-0 mx-3 text-slate-500 text-xs font-semibold">OR JOIN CODE</span>
+                    <div class="flex-grow border-t border-slate-700"></div>
+                </div>
+
+                <div class="flex gap-2">
+                    <input type="text" id="join-room-input" placeholder="ROOM CODE" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-mono text-center tracking-widest outline-none focus:border-indigo-500 uppercase text-sm" maxlength="6">
+                    <button id="btn-join-room" class="bg-slate-700 hover:bg-slate-600 transition-colors px-6 py-3 rounded-xl font-bold text-sm text-white">
                         Join
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Lobby Screen -->
-        <div id="screen-lobby" class="hide w-full flex flex-col md:flex-row gap-6">
-            <!-- Left Panel: Players -->
-            <div class="flex-1 glass rounded-3xl p-6 shadow-2xl flex flex-col">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold">Lobby: <span id="lobby-code-display" class="font-mono text-indigo-400 select-all"></span></h2>
-                    <button id="btn-leave-lobby" class="text-slate-400 hover:text-red-400 transition-colors text-sm font-bold">Leave</button>
+        <!-- PROFILE & STATS SCREEN -->
+        <div id="screen-profile" class="hide w-full max-w-4xl flex flex-col gap-6 py-2">
+            
+            <!-- Top Controls -->
+            <div class="flex justify-between items-center">
+                <button id="btn-profile-back-home" class="btn-secondary text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-2">
+                    ← Back to Arena
+                </button>
+                <div class="text-right">
+                    <span class="text-xs text-slate-400">Cloud Sync:</span>
+                    <span id="profile-sync-badge" class="text-xs font-bold text-emerald-400 ml-1">● Active</span>
                 </div>
-                
-                <div id="lobby-players-list" class="flex-1 flex flex-col gap-3 overflow-y-auto mb-6 min-h-[200px]">
-                    <!-- Player items injected here -->
+            </div>
+
+            <!-- Profile Customization & Header Card -->
+            <div class="glass rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-2xl border border-white/10">
+                <div class="flex items-center gap-5">
+                    <div class="relative">
+                        <div id="profile-avatar-active" class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-4xl shadow-xl border border-white/20">
+                            🦊
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <h2 id="profile-display-name" class="text-2xl md:text-3xl font-extrabold text-white">Player</h2>
+                            <span id="profile-rank-tier-badge" class="px-2.5 py-0.5 text-xs font-bold rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                Silver Tier
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">WACE Arena Contender • <span id="profile-elo-title" class="text-indigo-300 font-mono font-bold">1200 Elo</span></p>
+                    </div>
                 </div>
 
-                <button id="btn-start-game" class="btn-primary w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg hidden">
-                    Start Game
+                <!-- Customization Panel -->
+                <div class="flex flex-col gap-3 w-full md:w-auto">
+                    <div class="flex flex-wrap gap-1.5 items-center">
+                        <span class="text-xs text-slate-400 mr-1 font-medium">Avatar:</span>
+                        <div id="avatar-selector-chips" class="flex flex-wrap gap-1.5">
+                            <!-- Injected avatars -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Headline Key Metrics Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="glass-card rounded-2xl p-5 flex flex-col gap-1 border border-slate-700/60">
+                    <span class="text-xs text-slate-400 font-medium">Total Questions</span>
+                    <span id="stat-total-answered" class="text-2xl sm:text-3xl font-extrabold text-white font-mono">0</span>
+                    <span class="text-[11px] text-slate-500">Across all topics</span>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5 flex flex-col gap-1 border border-slate-700/60">
+                    <span class="text-xs text-slate-400 font-medium">Overall Accuracy</span>
+                    <span id="stat-accuracy-pct" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono">0.0%</span>
+                    <span id="stat-total-correct" class="text-[11px] text-slate-500">0 correct answers</span>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5 flex flex-col gap-1 border border-slate-700/60">
+                    <span class="text-xs text-slate-400 font-medium">Match Record (W-L)</span>
+                    <span id="stat-win-loss" class="text-2xl sm:text-3xl font-extrabold text-purple-400 font-mono">0 - 0</span>
+                    <span id="stat-wl-ratio" class="text-[11px] text-slate-500">Win Rate: 0%</span>
+                </div>
+
+                <div class="glass-card rounded-2xl p-5 flex flex-col gap-1 border border-slate-700/60">
+                    <span class="text-xs text-slate-400 font-medium">Elo Rank Rating</span>
+                    <span id="stat-elo-rating" class="text-2xl sm:text-3xl font-extrabold text-indigo-300 font-mono">1200</span>
+                    <span id="stat-elo-bracket" class="text-[11px] text-indigo-400/80 font-medium">Silver Contender</span>
+                </div>
+            </div>
+
+            <!-- Granular Topic Mastery Breakdown -->
+            <div class="glass rounded-3xl p-6 md:p-8 flex flex-col gap-6 shadow-2xl border border-white/10">
+                <div class="flex justify-between items-center flex-wrap gap-2">
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Curriculum Topic Breakdown</h3>
+                        <p class="text-xs text-slate-400">Questions solved and percentage mastery by syllabus unit</p>
+                    </div>
+                    <button id="btn-sync-cloud-bank" class="btn-secondary text-xs font-semibold px-3 py-1.5 rounded-lg text-indigo-300 flex items-center gap-1.5">
+                        <span>☁️ Sync Question Bank</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="profile-topics-grid">
+                    <!-- Dynamic topic cards injected here -->
+                </div>
+            </div>
+
+            <!-- Action footer -->
+            <div class="flex justify-end gap-3 pb-8">
+                <button id="btn-reset-stats" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-4 py-2 rounded-xl bg-rose-950/30 border border-rose-900/50">
+                    Reset Local Stats
                 </button>
-                <p id="lobby-waiting-msg" class="text-center text-slate-400 italic">Waiting for host to start...</p>
+            </div>
+        </div>
+
+        <!-- LOBBY SCREEN -->
+        <div id="screen-lobby" class="hide w-full flex flex-col md:flex-row gap-6">
+            <!-- Left Panel: Players -->
+            <div class="flex-1 glass rounded-3xl p-6 shadow-2xl flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">Lobby Room</h2>
+                            <p class="text-xs text-slate-400">Code: <span id="lobby-code-display" class="font-mono text-indigo-300 font-bold select-all text-sm tracking-wider"></span></p>
+                        </div>
+                        <button id="btn-leave-lobby" class="text-slate-400 hover:text-rose-400 transition-colors text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-800">
+                            Leave
+                        </button>
+                    </div>
+                    
+                    <div id="lobby-players-list" class="flex flex-col gap-2.5 overflow-y-auto mb-6 max-h-[300px] custom-scrollbar">
+                        <!-- Player items injected here -->
+                    </div>
+                </div>
+
+                <div>
+                    <button id="btn-start-game" class="btn-primary w-full py-4 rounded-xl font-bold text-base text-white shadow-lg hidden">
+                        ⚡ Start Battle
+                    </button>
+                    <p id="lobby-waiting-msg" class="text-center text-slate-400 text-xs italic py-2">Waiting for host to configure and launch...</p>
+                </div>
             </div>
 
             <!-- Right Panel: Settings (Host Only) -->
-            <div class="flex-[1.5] glass rounded-3xl p-6 shadow-2xl flex flex-col relative overflow-hidden">
+            <div class="flex-[1.4] glass rounded-3xl p-6 shadow-2xl flex flex-col relative overflow-hidden">
                 <div id="settings-overlay" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-10 flex items-center justify-center hidden">
-                    <p class="text-white font-bold">Only the Host can change settings</p>
+                    <p class="text-white font-bold text-sm bg-slate-800/90 px-4 py-2 rounded-xl border border-slate-700">Only the Host can configure topics</p>
                 </div>
                 
                 <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
-                    <h3 class="text-xl font-bold">Topic Selection</h3>
-                    <button id="btn-toggle-all" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-1.5 px-3 rounded-lg transition-colors shadow">Toggle All</button>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Topic Selection</h3>
+                        <p class="text-[11px] text-slate-400">Select topics to generate match problem sets</p>
+                    </div>
+                    <button id="btn-toggle-all" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-1 px-3 rounded-lg transition-colors shadow">Toggle All</button>
                 </div>
                 
-                <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-6">
-                    <!-- Year 11 Methods -->
+                <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar flex flex-col gap-5 max-h-[320px]">
+                    <!-- Methods Topics -->
                     <div>
-                        <h4 class="text-indigo-400 font-bold mb-3 text-sm uppercase tracking-wider">Methods</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pl-2">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="topic-cb w-5 h-5 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" value="Functions and Graphs" checked>
-                                <span class="text-sm font-medium">Functions & Graphs</span>
+                        <h4 class="text-indigo-400 font-bold mb-2 text-xs uppercase tracking-wider">Mathematics Methods</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-colors">
+                                <input type="checkbox" class="topic-cb w-4 h-4 rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-indigo-500" value="Functions and Graphs" checked>
+                                <span class="text-xs font-medium text-slate-200">Functions & Graphs</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="topic-cb w-5 h-5 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" value="Trigonometric Functions" checked>
-                                <span class="text-sm font-medium">Trigonometric Functions</span>
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-colors">
+                                <input type="checkbox" class="topic-cb w-4 h-4 rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-indigo-500" value="Trigonometric Functions" checked>
+                                <span class="text-xs font-medium text-slate-200">Trigonometric Functions</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="topic-cb w-5 h-5 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" value="Counting and Probability" checked>
-                                <span class="text-sm font-medium">Counting & Probability</span>
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-colors">
+                                <input type="checkbox" class="topic-cb w-4 h-4 rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-indigo-500" value="Counting and Probability" checked>
+                                <span class="text-xs font-medium text-slate-200">Counting & Probability</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="topic-cb w-5 h-5 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" value="Exponential Functions" checked>
-                                <span class="text-sm font-medium">Exponential Functions</span>
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-colors">
+                                <input type="checkbox" class="topic-cb w-4 h-4 rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-indigo-500" value="Exponential Functions" checked>
+                                <span class="text-xs font-medium text-slate-200">Exponential Functions</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="topic-cb w-5 h-5 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" value="Sequences and Series" checked>
-                                <span class="text-sm font-medium">Sequences & Series</span>
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-colors">
+                                <input type="checkbox" class="topic-cb w-4 h-4 rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-indigo-500" value="Sequences and Series" checked>
+                                <span class="text-xs font-medium text-slate-200">Sequences & Series</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="topic-cb w-5 h-5 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" value="Rates of Change" checked>
-                                <span class="text-sm font-medium">Rates of Change</span>
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-colors">
+                                <input type="checkbox" class="topic-cb w-4 h-4 rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-indigo-500" value="Rates of Change" checked>
+                                <span class="text-xs font-medium text-slate-200">Rates of Change</span>
                             </label>
                         </div>
                     </div>
 
-                    <!-- Year 11 Specialist -->
+                    <!-- Specialist Topics -->
                     <div>
-                        <h4 class="text-purple-400 font-bold mb-3 text-sm uppercase tracking-wider">Specialist</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pl-2">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="topic-cb w-5 h-5 rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500" value="Geometry" checked>
-                                <span class="text-sm font-medium">Geometry</span>
+                        <h4 class="text-purple-400 font-bold mb-2 text-xs uppercase tracking-wider">Mathematics Specialist</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-colors">
+                                <input type="checkbox" class="topic-cb w-4 h-4 rounded border-slate-600 bg-slate-900 text-purple-500 focus:ring-purple-500" value="Geometry" checked>
+                                <span class="text-xs font-medium text-slate-200">Circle Geometry</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="topic-cb w-5 h-5 rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500" value="Combinatorics" checked>
-                                <span class="text-sm font-medium">Combinatorics</span>
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-colors">
+                                <input type="checkbox" class="topic-cb w-4 h-4 rounded border-slate-600 bg-slate-900 text-purple-500 focus:ring-purple-500" value="Combinatorics" checked>
+                                <span class="text-xs font-medium text-slate-200">Combinatorics</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="topic-cb w-5 h-5 rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500" value="Vectors in the Plane" checked>
-                                <span class="text-sm font-medium">Vectors in the Plane</span>
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-colors">
+                                <input type="checkbox" class="topic-cb w-4 h-4 rounded border-slate-600 bg-slate-900 text-purple-500 focus:ring-purple-500" value="Vectors in the Plane" checked>
+                                <span class="text-xs font-medium text-slate-200">Vectors in the Plane</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="topic-cb w-5 h-5 rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500" value="Trigonometry (Spec)" checked>
-                                <span class="text-sm font-medium">Trigonometry (Spec)</span>
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-colors">
+                                <input type="checkbox" class="topic-cb w-4 h-4 rounded border-slate-600 bg-slate-900 text-purple-500 focus:ring-purple-500" value="Trigonometry (Spec)" checked>
+                                <span class="text-xs font-medium text-slate-200">Trigonometry (Spec)</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="topic-cb w-5 h-5 rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500" value="Matrices" checked>
-                                <span class="text-sm font-medium">Matrices</span>
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-colors">
+                                <input type="checkbox" class="topic-cb w-4 h-4 rounded border-slate-600 bg-slate-900 text-purple-500 focus:ring-purple-500" value="Matrices" checked>
+                                <span class="text-xs font-medium text-slate-200">Matrices & Inverses</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" class="topic-cb w-5 h-5 rounded border-slate-600 bg-slate-800 text-purple-500 focus:ring-purple-500" value="Real and Complex Numbers" checked>
-                                <span class="text-sm font-medium">Real & Complex Numbers</span>
+                            <label class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/80 cursor-pointer transition-colors">
+                                <input type="checkbox" class="topic-cb w-4 h-4 rounded border-slate-600 bg-slate-900 text-purple-500 focus:ring-purple-500" value="Real and Complex Numbers" checked>
+                                <span class="text-xs font-medium text-slate-200">Real & Complex Numbers</span>
                             </label>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-4 pt-4 border-t border-slate-700 flex justify-between items-center">
-                    <span class="text-sm font-semibold text-slate-400">Target Score:</span>
-                    <select id="target-score-select" class="bg-slate-800 border border-slate-600 rounded px-3 py-1 text-white outline-none">
-                        <option value="10">10 Points (Short)</option>
-                        <option value="20" selected>20 Points (Medium)</option>
-                        <option value="50">50 Points (Marathon)</option>
+                <div class="mt-4 pt-3 border-t border-slate-700 flex justify-between items-center">
+                    <span class="text-xs font-semibold text-slate-400">Race Target Score:</span>
+                    <select id="target-score-select" class="bg-slate-800 border border-slate-600 rounded-lg px-3 py-1.5 text-xs text-white outline-none">
+                        <option value="10">10 Points (Quick Sprint)</option>
+                        <option value="20" selected>20 Points (Standard Match)</option>
+                        <option value="50">50 Points (Marathon Run)</option>
                     </select>
                 </div>
             </div>
         </div>
 
-        <!-- Game Screen -->
+        <!-- GAME SCREEN -->
         <div id="screen-game" class="hide w-full max-w-3xl flex flex-col gap-4">
             
-            <!-- Progress Bars Area -->
-            <div class="glass rounded-2xl p-4 flex flex-col gap-3 shadow-lg" id="game-progress-bars">
+            <!-- Race Progress Bars Area -->
+            <div class="glass rounded-2xl p-4 flex flex-col gap-2.5 shadow-lg" id="game-progress-bars">
                 <!-- Injected via JS -->
             </div>
 
-            <!-- Question Area -->
-            <div class="glass rounded-3xl p-6 md:p-10 shadow-2xl flex flex-col items-center text-center relative overflow-hidden min-h-[400px]">
+            <!-- Main Question Card -->
+            <div class="glass rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col items-center text-center relative overflow-hidden min-h-[420px]">
                 
                 <!-- Countdown Overlay -->
-                <div id="game-countdown-overlay" class="absolute inset-0 bg-slate-900/90 z-20 flex flex-col items-center justify-center">
-                    <h2 class="text-3xl font-bold text-indigo-400 mb-2">Get Ready</h2>
-                    <p id="game-countdown-number" class="text-7xl font-extrabold text-white animate-pulse">3</p>
+                <div id="game-countdown-overlay" class="absolute inset-0 bg-slate-950/95 z-30 flex flex-col items-center justify-center">
+                    <h2 class="text-2xl font-bold text-indigo-400 mb-1">Battle Starting</h2>
+                    <p id="game-countdown-number" class="text-7xl font-extrabold text-white animate-pulse font-mono">3</p>
                 </div>
 
                 <div class="w-full flex justify-between items-center mb-4 gap-2">
                     <div class="flex items-center gap-2">
-                        <span class="text-sm font-bold text-slate-400 uppercase tracking-wider" id="game-topic-label">Topic</span>
-                        <span id="game-qtype-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Multiple Choice</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider" id="game-topic-label">Topic</span>
+                        <span id="game-qtype-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Multiple Choice</span>
                     </div>
-                    <span class="text-sm font-bold text-slate-400">Score: <span id="game-local-score" class="text-white text-lg">0</span></span>
+                    <span class="text-xs font-bold text-slate-400">Score: <span id="game-local-score" class="text-white text-base font-mono font-extrabold">0</span></span>
                 </div>
 
-                <!-- Multi-Step Progress Bar Indicator -->
-                <div id="multistep-progress-container" class="w-full mb-4 hidden bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                <!-- Multi-Step Progress Indicator -->
+                <div id="multistep-progress-container" class="w-full mb-4 hidden bg-slate-900/80 p-3 rounded-xl border border-slate-700 text-left">
                     <div class="flex justify-between items-center text-xs text-indigo-300 mb-1.5 font-semibold">
                         <span id="multistep-step-label">Step 1 of 2</span>
-                        <span id="multistep-step-title" class="truncate max-w-[200px] text-slate-300">Find derivative</span>
+                        <span id="multistep-step-title" class="truncate max-w-[240px] text-slate-300 text-[11px]">Solve step</span>
                     </div>
-                    <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700">
+                    <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
                         <div id="multistep-bar-fill" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full transition-all duration-300" style="width: 50%"></div>
                     </div>
                 </div>
 
-                <h2 id="game-question-text" class="text-2xl md:text-3xl font-bold mb-4 flex flex-col items-center justify-center w-full">
+                <h2 id="game-question-text" class="text-xl md:text-2xl font-bold mb-4 flex flex-col items-center justify-center w-full min-h-[60px]">
                     <!-- Question goes here -->
                 </h2>
 
-                <!-- Visual Container (Dynamic SVG Render) -->
-                <div id="game-visual-container" class="w-full hidden mb-6">
-                    <!-- Visual block injected here -->
+                <!-- Visual Container (SVG Diagrams) -->
+                <div id="game-visual-container" class="w-full hidden mb-4">
+                    <!-- Visual SVG block injected here -->
                 </div>
 
-                <!-- Option Grid for MCQ -->
-                <div id="game-options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                <!-- MCQ Options Grid -->
+                <div id="game-options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5 w-full">
                     <!-- Options injected here -->
                 </div>
 
                 <!-- Short Answer Input Container -->
                 <div id="game-short-answer-container" class="w-full hidden flex-col gap-3">
                     <div class="flex gap-2">
-                        <input type="text" id="short-answer-input" placeholder="Type answer (e.g. 5, x=2, pi/3)..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3.5 text-white text-lg font-mono outline-none focus:border-indigo-500 shadow-inner">
-                        <button id="btn-submit-short-ans" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3.5 rounded-xl transition-all shadow-lg active:scale-95">Submit</button>
+                        <input type="text" id="short-answer-input" placeholder="Type exact answer (e.g. 5, x=2, pi/3, -4)..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3.5 text-white text-base font-mono outline-none focus:border-indigo-500 shadow-inner">
+                        <button id="btn-submit-short-ans" class="btn-primary text-white font-bold px-6 py-3.5 rounded-xl transition-all shadow-lg active:scale-95 text-sm">Submit</button>
                     </div>
-                    <p class="text-xs text-slate-400 text-left">Tip: Numerical values, simplified expressions, or exact forms accepted (e.g. 1/2, x=5).</p>
+                    <p class="text-[11px] text-slate-400 text-left">Accepts integers, fractions, or algebraic forms (e.g. 1/2, x=5).</p>
                 </div>
 
-                <!-- Working Out Scratchpad Container -->
+                <!-- Stylus Scratchpad Working Out Section -->
                 <div class="w-full mt-6 pt-4 border-t border-slate-700/60 flex flex-col gap-3 text-left">
                     <div class="flex justify-between items-center flex-wrap gap-2">
-                        <button id="btn-toggle-scratchpad" class="flex items-center gap-2 text-sm font-semibold text-indigo-300 hover:text-indigo-200 transition-colors bg-slate-800/60 hover:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+                        <button id="btn-toggle-scratchpad" class="flex items-center gap-2 text-xs font-semibold text-indigo-300 hover:text-indigo-200 transition-colors bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
                             <span id="scratchpad-toggle-icon">✏️</span>
                             <span>Working Out Scratchpad</span>
-                            <span class="text-xs text-slate-400 font-normal">(Stylus / Canvas / Notes)</span>
+                            <span class="text-[11px] text-slate-400 font-normal">(Canvas / Notes)</span>
                         </button>
 
-                        <div id="scratchpad-mode-toggle" class="flex gap-1 text-xs bg-slate-900 p-1 rounded-lg border border-slate-700 hidden">
-                            <button id="sp-mode-draw" class="px-2.5 py-1 rounded-md font-bold bg-indigo-600 text-white transition-colors">Stylus Draw</button>
-                            <button id="sp-mode-text" class="px-2.5 py-1 rounded-md font-bold text-slate-400 hover:text-white transition-colors">Text Notes</button>
+                        <div id="scratchpad-mode-toggle" class="flex gap-1 text-[11px] bg-slate-900 p-1 rounded-lg border border-slate-700 hidden">
+                            <button id="sp-mode-draw" class="px-2.5 py-0.5 rounded-md font-bold bg-indigo-600 text-white transition-colors">Stylus Draw</button>
+                            <button id="sp-mode-text" class="px-2.5 py-0.5 rounded-md font-bold text-slate-400 hover:text-white transition-colors">Text Notes</button>
                         </div>
                     </div>
 
-                    <div id="scratchpad-panel" class="w-full flex flex-col gap-3 hidden">
+                    <div id="scratchpad-panel" class="w-full flex flex-col gap-2.5 hidden">
                         <!-- Draw Canvas Toolbar -->
                         <div id="scratchpad-draw-controls" class="flex flex-wrap justify-between items-center gap-2 bg-slate-900/90 p-2.5 rounded-xl border border-slate-700 text-xs shadow-md">
                             <div class="flex items-center gap-1.5">
-                                <span class="text-slate-400 font-medium mr-1">Color:</span>
-                                <button data-color="#ffffff" class="sp-color-btn w-6 h-6 rounded-full bg-white border-2 border-indigo-400 shadow"></button>
-                                <button data-color="#818cf8" class="sp-color-btn w-6 h-6 rounded-full bg-indigo-400 border-2 border-transparent hover:border-white shadow"></button>
-                                <button data-color="#38bdf8" class="sp-color-btn w-6 h-6 rounded-full bg-sky-400 border-2 border-transparent hover:border-white shadow"></button>
-                                <button data-color="#f43f5e" class="sp-color-btn w-6 h-6 rounded-full bg-rose-500 border-2 border-transparent hover:border-white shadow"></button>
-                                <button data-color="#facc15" class="sp-color-btn w-6 h-6 rounded-full bg-yellow-400 border-2 border-transparent hover:border-white shadow"></button>
-                                <button data-color="eraser" class="sp-color-btn px-2 py-1 rounded bg-slate-800 text-slate-200 font-bold border border-slate-700 hover:bg-slate-700">Eraser</button>
+                                <span class="text-slate-400 font-medium mr-1 text-[11px]">Color:</span>
+                                <button data-color="#ffffff" class="sp-color-btn w-5 h-5 rounded-full bg-white border-2 border-indigo-400 shadow"></button>
+                                <button data-color="#818cf8" class="sp-color-btn w-5 h-5 rounded-full bg-indigo-400 border-2 border-transparent hover:border-white shadow"></button>
+                                <button data-color="#38bdf8" class="sp-color-btn w-5 h-5 rounded-full bg-sky-400 border-2 border-transparent hover:border-white shadow"></button>
+                                <button data-color="#f43f5e" class="sp-color-btn w-5 h-5 rounded-full bg-rose-500 border-2 border-transparent hover:border-white shadow"></button>
+                                <button data-color="#facc15" class="sp-color-btn w-5 h-5 rounded-full bg-yellow-400 border-2 border-transparent hover:border-white shadow"></button>
+                                <button data-color="eraser" class="sp-color-btn px-2 py-0.5 rounded bg-slate-800 text-slate-200 text-xs font-bold border border-slate-700">Eraser</button>
                             </div>
 
                             <div class="flex items-center gap-1.5">
-                                <span class="text-slate-400 font-medium mr-1">Size:</span>
-                                <button data-size="2" class="sp-size-btn px-2 py-1 rounded bg-slate-800 text-slate-200 font-bold border border-slate-700 hover:bg-slate-700">Fine</button>
-                                <button data-size="4" class="sp-size-btn px-2 py-1 rounded bg-indigo-600 text-white font-bold border border-indigo-500">Med</button>
-                                <button data-size="8" class="sp-size-btn px-2 py-1 rounded bg-slate-800 text-slate-200 font-bold border border-slate-700 hover:bg-slate-700">Bold</button>
+                                <span class="text-slate-400 font-medium mr-1 text-[11px]">Pen:</span>
+                                <button data-size="2" class="sp-size-btn px-2 py-0.5 rounded bg-slate-800 text-slate-200 text-xs font-bold border border-slate-700">Fine</button>
+                                <button data-size="4" class="sp-size-btn px-2 py-0.5 rounded bg-indigo-600 text-white text-xs font-bold border border-indigo-500">Med</button>
+                                <button data-size="8" class="sp-size-btn px-2 py-0.5 rounded bg-slate-800 text-slate-200 text-xs font-bold border border-slate-700">Bold</button>
                             </div>
 
                             <div class="flex items-center gap-2">
-                                <button id="btn-sp-undo" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold border border-slate-700 transition-colors flex items-center gap-1">↩ Undo</button>
-                                <button id="btn-sp-clear" class="px-2.5 py-1 bg-rose-950/60 hover:bg-rose-900 text-rose-200 rounded-lg font-semibold border border-rose-800/60 transition-colors flex items-center gap-1">🗑️ Clear</button>
+                                <button id="btn-sp-undo" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 transition-colors">↩ Undo</button>
+                                <button id="btn-sp-clear" class="px-2 py-0.5 bg-rose-950/60 hover:bg-rose-900 text-rose-200 rounded-lg text-xs font-semibold border border-rose-800/60 transition-colors">🗑️ Clear</button>
                             </div>
                         </div>
 
-                        <!-- Stylus Canvas Canvas Area -->
-                        <div id="scratchpad-canvas-container" class="w-full relative rounded-2xl overflow-hidden border border-slate-700 bg-slate-950/95 shadow-inner" style="height: 240px;">
+                        <!-- Canvas Area -->
+                        <div id="scratchpad-canvas-container" class="w-full relative rounded-2xl overflow-hidden border border-slate-700 bg-slate-950/95 shadow-inner" style="height: 220px;">
                             <canvas id="scratchpad-canvas" class="w-full h-full touch-none cursor-crosshair block"></canvas>
-                            <div class="absolute bottom-2 right-2 text-[10px] text-slate-500 pointer-events-none select-none bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">Stylus Pressure & Touch Enabled</div>
+                            <div class="absolute bottom-2 right-2 text-[10px] text-slate-500 pointer-events-none select-none bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">Stylus & Touch Enabled</div>
                         </div>
 
-                        <!-- Text Notes Working Area -->
+                        <!-- Text Notes Area -->
                         <div id="scratchpad-text-container" class="w-full hidden flex-col gap-2">
-                            <textarea id="scratchpad-textarea" placeholder="Type scratchpad formulas or notes here... Use $$ or $ for LaTeX..." class="w-full h-24 bg-slate-950/95 border border-slate-700 rounded-2xl p-3.5 text-slate-200 font-mono text-sm outline-none focus:border-indigo-500 shadow-inner resize-y"></textarea>
-                            <div class="w-full p-3 bg-slate-900 rounded-xl border border-slate-700 text-slate-200 min-h-[3rem]" id="scratchpad-latex-preview">
-                                <span class="text-slate-500 italic text-xs">Live LaTeX preview will appear here...</span>
+                            <textarea id="scratchpad-textarea" placeholder="Type scratchpad formulas... e.g. $$ \\int x^2 dx = \\frac{x^3}{3} $$" class="w-full h-20 bg-slate-950/95 border border-slate-700 rounded-xl p-3 text-slate-200 font-mono text-xs outline-none focus:border-indigo-500 shadow-inner resize-y"></textarea>
+                            <div class="w-full p-2.5 bg-slate-900 rounded-xl border border-slate-700 text-slate-200 min-h-[2.5rem] text-xs" id="scratchpad-latex-preview">
+                                <span class="text-slate-500 italic text-[11px]">Live LaTeX preview...</span>
                             </div>
                         </div>
                     </div>
@@ -368,32 +699,46 @@
             </div>
         </div>
 
-        <!-- Results Screen -->
-        <div id="screen-results" class="hide w-full max-w-2xl glass rounded-3xl p-8 shadow-2xl flex flex-col items-center">
-            <h1 class="text-4xl font-extrabold mb-2" id="results-title">Match Finished!</h1>
-            <p class="text-slate-400 mb-8" id="results-subtitle">Calculating Elo changes...</p>
+        <!-- RESULTS SCREEN -->
+        <div id="screen-results" class="hide w-full max-w-2xl glass rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col items-center text-center">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-600 flex items-center justify-center text-3xl mb-3 shadow-lg shadow-amber-500/20">
+                🏆
+            </div>
+            
+            <h1 class="text-3xl font-extrabold text-white mb-1" id="results-title">Match Finished!</h1>
+            <p class="text-slate-400 text-xs mb-6" id="results-subtitle">Leaderboard & Rating Adjustments</p>
 
-            <div class="w-full flex flex-col gap-4 mb-8" id="results-leaderboard">
+            <div class="w-full flex flex-col gap-3 mb-6" id="results-leaderboard">
                 <!-- Leaderboard injected here -->
             </div>
 
-            <button id="btn-return-home" class="bg-slate-700 hover:bg-slate-600 transition-colors w-full py-4 rounded-xl font-bold text-lg text-white">
-                Return to Home
-            </button>
+            <div class="flex flex-col sm:flex-row gap-3 w-full">
+                <button id="btn-results-view-profile" class="btn-secondary flex-1 py-3.5 rounded-xl font-bold text-sm text-slate-200">
+                    📊 View Updated Profile & Stats
+                </button>
+                <button id="btn-return-home" class="btn-primary flex-1 py-3.5 rounded-xl font-bold text-sm text-white shadow-lg">
+                    ⚔️ Return to Arena
+                </button>
+            </div>
         </div>
 
         <!-- Toast Notification -->
-        <div id="toast" class="fixed bottom-4 right-4 bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-xl translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <div id="toast" class="fixed bottom-4 right-4 bg-slate-800/95 border border-slate-700 rounded-xl p-3.5 shadow-2xl translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3 backdrop-blur-md">
             <span id="toast-icon">ℹ️</span>
-            <span id="toast-msg" class="font-medium">Notification</span>
+            <span id="toast-msg" class="text-xs font-medium text-white">Notification</span>
         </div>
 
-    </div>
+    </main>
+
+    <footer class="w-full max-w-5xl text-center py-4 mt-8 text-xs text-slate-500 border-t border-slate-800/80 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <p>WACE Math Rush • Competitive Methods & Specialist Revision</p>
+        <p class="text-[11px]">Real-Time Ranked Multiplayer Engine</p>
+    </footer>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'wace-math-rush-app';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
@@ -407,13 +752,65 @@
             auth = getAuth(app);
             isFirebaseInitialized = true;
         } catch (e) {
-            console.warn("Firebase initialization warning or fallback mode active:", e);
+            console.warn("Firebase initialization note (operating in offline/fallback mode):", e);
         }
 
         const googleProvider = new GoogleAuthProvider();
 
+        const ALL_WACE_TOPICS = [
+            'Functions and Graphs',
+            'Trigonometric Functions',
+            'Counting and Probability',
+            'Exponential Functions',
+            'Sequences and Series',
+            'Rates of Change',
+            'Geometry',
+            'Combinatorics',
+            'Vectors in the Plane',
+            'Trigonometry (Spec)',
+            'Matrices',
+            'Real and Complex Numbers'
+        ];
+
+        const AVATARS = ['🦊', '⚡', '🦉', '🚀', '🧙', '👑', '🎯', '🧬', '💎', '🏆', '🐉', '💡'];
+
+        function getInitialStats() {
+            const topicStats = {};
+            ALL_WACE_TOPICS.forEach(t => {
+                topicStats[t] = { answered: 0, correct: 0 };
+            });
+            return {
+                totalAnswered: 0,
+                totalCorrect: 0,
+                wins: 0,
+                losses: 0,
+                matchesPlayed: 0,
+                topicStats: topicStats
+            };
+        }
+
+        // Local Storage / Cloud User Profile Model
         let currentUser = null;
-        let userProfile = { name: "Player", elo: 1200 };
+        let userProfile = {
+            name: "Player",
+            elo: 1200,
+            avatar: "🦊",
+            themeColor: "indigo",
+            stats: getInitialStats()
+        };
+
+        // Load local profile cached backup
+        try {
+            const cached = localStorage.getItem('csso_user_profile');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                userProfile = { ...userProfile, ...parsed };
+                if (!userProfile.stats) userProfile.stats = getInitialStats();
+            }
+        } catch(e) {
+            console.warn("Local storage read note:", e);
+        }
+
         let currentRoomId = null;
         let isHost = false;
         let roomUnsubscribe = null;
@@ -421,11 +818,12 @@
         
         let matchQuestions = [];
         let currentQuestionIndex = 0;
+        let currentMultiStepIndex = 0;
         let localScore = 0;
         let targetScore = 20;
         let isAnswerCooldown = false;
         
-        // Memory room store fallback if offline or permission restricted
+        // Memory room store fallback for offline/sandboxed multiplayer
         const localMemoryRooms = {};
 
         const SvgBuilder = {
@@ -434,34 +832,45 @@
                 return { x: r * Math.cos(rad), y: -r * Math.sin(rad) };
             },
             circleTemplate: (content) => `
-                <svg viewBox="-120 -120 240 240" class="w-48 h-48 mx-auto overflow-visible" style="stroke: #cbd5e1; fill: none; stroke-width: 2;">
+                <svg viewBox="-120 -120 240 240" class="w-44 h-44 mx-auto overflow-visible" style="stroke: #cbd5e1; fill: none; stroke-width: 2;">
                     <circle cx="0" cy="0" r="100" />
                     ${content}
                 </svg>
             `,
             dot: (p, label, labelOffset = {x:0, y:0}) => `
                 <circle cx="${p.x}" cy="${p.y}" r="4" style="fill: #818cf8; stroke: none;" />
-                ${label ? `<text x="${p.x + labelOffset.x}" y="${p.y + labelOffset.y}" style="fill: #cbd5e1; stroke: none; font-size: 16px; font-weight: bold;" text-anchor="middle">${label}</text>` : ''}
+                ${label ? `<text x="${p.x + labelOffset.x}" y="${p.y + labelOffset.y}" style="fill: #cbd5e1; stroke: none; font-size: 15px; font-weight: bold;" text-anchor="middle">${label}</text>` : ''}
             `,
             line: (p1, p2, color="#cbd5e1") => `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" style="stroke: ${color};" />`,
             path: (points, closed=false, color="#cbd5e1") => {
                 const d = points.map((p, i) => (i===0 ? 'M' : 'L') + ` ${p.x} ${p.y}`).join(' ') + (closed ? ' Z' : '');
                 return `<path d="${d}" style="stroke: ${color}; stroke-linejoin: round;" />`;
             },
-            text: (x, y, txt, color="#cbd5e1") => `<text x="${x}" y="${y}" style="fill: ${color}; stroke: none; font-size: 16px; font-weight: bold;" text-anchor="middle">${txt}</text>`
+            text: (x, y, txt, color="#cbd5e1") => `<text x="${x}" y="${y}" style="fill: ${color}; stroke: none; font-size: 15px; font-weight: bold;" text-anchor="middle">${txt}</text>`
         };
 
         const screens = {
             loading: document.getElementById('screen-loading'),
+            landing: document.getElementById('screen-landing'),
             home: document.getElementById('screen-home'),
+            profile: document.getElementById('screen-profile'),
             lobby: document.getElementById('screen-lobby'),
             game: document.getElementById('screen-game'),
             results: document.getElementById('screen-results')
         };
 
         function showScreen(screenName) {
-            Object.values(screens).forEach(s => s.classList.add('hide'));
-            screens[screenName].classList.remove('hide');
+            Object.values(screens).forEach(s => {
+                if (s) s.classList.add('hide');
+            });
+            if (screens[screenName]) {
+                screens[screenName].classList.remove('hide');
+            }
+            if (screenName === 'profile') {
+                renderProfileDashboard();
+            } else if (screenName === 'landing') {
+                renderLandingTeaser();
+            }
         }
 
         function showToast(msg, isError = false) {
@@ -476,6 +885,143 @@
 
         function generateRoomCode() {
             return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        function getRankBadge(elo) {
+            if (elo >= 2000) return { title: 'Grandmaster', bg: 'bg-rose-500/20 text-rose-300 border-rose-500/40' };
+            if (elo >= 1800) return { title: 'Diamond', bg: 'bg-sky-500/20 text-sky-300 border-sky-500/40' };
+            if (elo >= 1600) return { title: 'Platinum', bg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' };
+            if (elo >= 1400) return { title: 'Gold', bg: 'bg-amber-500/20 text-amber-300 border-amber-500/40' };
+            if (elo >= 1200) return { title: 'Silver', bg: 'bg-slate-400/20 text-slate-200 border-slate-400/40' };
+            return { title: 'Bronze', bg: 'bg-orange-600/20 text-orange-300 border-orange-600/40' };
+        }
+
+        function updateGlobalUIHeaders() {
+            document.getElementById('nav-avatar-display').innerText = userProfile.avatar || '🦊';
+            document.getElementById('nav-username-display').innerText = userProfile.name || 'Profile';
+            document.getElementById('nav-elo-display').innerText = `${userProfile.elo || 1200}`;
+            
+            document.getElementById('home-avatar-display').innerText = userProfile.avatar || '🦊';
+            document.getElementById('player-name-input').value = userProfile.name || 'Player';
+            document.getElementById('player-elo-display').innerText = `${userProfile.elo || 1200} Elo`;
+        }
+
+        function renderLandingTeaser() {
+            updateGlobalUIHeaders();
+            const rank = getRankBadge(userProfile.elo || 1200);
+            document.getElementById('landing-teaser-avatar').innerText = userProfile.avatar || '🦊';
+            document.getElementById('landing-teaser-name').innerText = userProfile.name || 'Player';
+            document.getElementById('landing-teaser-elo').innerText = `${userProfile.elo || 1200} Elo`;
+            
+            const badge = document.getElementById('landing-teaser-rank-badge');
+            badge.innerText = rank.title;
+            badge.className = `px-2 py-0.5 text-xs font-bold rounded-md border ${rank.bg}`;
+
+            const stats = userProfile.stats || getInitialStats();
+            const total = stats.totalAnswered || 0;
+            const correct = stats.totalCorrect || 0;
+            const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+            
+            document.getElementById('landing-teaser-questions').innerText = total;
+            document.getElementById('landing-teaser-accuracy').innerText = `${pct}%`;
+            document.getElementById('landing-teaser-wl').innerText = `${stats.wins || 0} / ${stats.losses || 0}`;
+        }
+
+        function renderProfileDashboard() {
+            updateGlobalUIHeaders();
+            const stats = userProfile.stats || getInitialStats();
+            const rank = getRankBadge(userProfile.elo || 1200);
+
+            document.getElementById('profile-avatar-active').innerText = userProfile.avatar || '🦊';
+            document.getElementById('profile-display-name').innerText = userProfile.name || 'Player';
+            document.getElementById('profile-elo-title').innerText = `${userProfile.elo || 1200} Elo`;
+            
+            const tierBadge = document.getElementById('profile-rank-tier-badge');
+            tierBadge.innerText = `${rank.title} Tier`;
+            tierBadge.className = `px-2.5 py-0.5 text-xs font-bold rounded-lg border ${rank.bg}`;
+
+            // Render Avatar selector chips
+            const avatarContainer = document.getElementById('avatar-selector-chips');
+            avatarContainer.innerHTML = '';
+            AVATARS.forEach(av => {
+                const btn = document.createElement('button');
+                btn.className = `w-7 h-7 rounded-lg flex items-center justify-center text-sm transition-transform hover:scale-110 ${userProfile.avatar === av ? 'bg-indigo-600 border border-indigo-300' : 'bg-slate-800 border border-slate-700'}`;
+                btn.innerText = av;
+                btn.onclick = async () => {
+                    userProfile.avatar = av;
+                    await saveUserProfile();
+                    renderProfileDashboard();
+                };
+                avatarContainer.appendChild(btn);
+            });
+
+            // Headline stats
+            const total = stats.totalAnswered || 0;
+            const correct = stats.totalCorrect || 0;
+            const pct = total > 0 ? ((correct / total) * 100).toFixed(1) : '0.0';
+            const wins = stats.wins || 0;
+            const losses = stats.losses || 0;
+            const matches = stats.matchesPlayed || (wins + losses);
+            const winRate = matches > 0 ? Math.round((wins / matches) * 100) : 0;
+
+            document.getElementById('stat-total-answered').innerText = total;
+            document.getElementById('stat-accuracy-pct').innerText = `${pct}%`;
+            document.getElementById('stat-total-correct').innerText = `${correct} correct answers`;
+            document.getElementById('stat-win-loss').innerText = `${wins}W - ${losses}L`;
+            document.getElementById('stat-wl-ratio').innerText = `Win Rate: ${winRate}% (${matches} matches)`;
+            document.getElementById('stat-elo-rating').innerText = userProfile.elo || 1200;
+            document.getElementById('stat-elo-bracket').innerText = `${rank.title} Contender`;
+
+            // Render Granular Topics
+            const topicsGrid = document.getElementById('profile-topics-grid');
+            topicsGrid.innerHTML = '';
+
+            ALL_WACE_TOPICS.forEach(topic => {
+                const tData = (stats.topicStats && stats.topicStats[topic]) ? stats.topicStats[topic] : { answered: 0, correct: 0 };
+                const tAns = tData.answered || 0;
+                const tCorr = tData.correct || 0;
+                const tPct = tAns > 0 ? Math.round((tCorr / tAns) * 100) : 0;
+
+                let masteryTag = '<span class="text-[10px] font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded">Unranked</span>';
+                if (tAns >= 5) {
+                    if (tPct >= 80) masteryTag = '<span class="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2 py-0.5 rounded">Mastered</span>';
+                    else if (tPct >= 50) masteryTag = '<span class="text-[10px] font-bold text-indigo-300 bg-indigo-950/60 border border-indigo-800 px-2 py-0.5 rounded">Proficient</span>';
+                    else masteryTag = '<span class="text-[10px] font-bold text-rose-300 bg-rose-950/60 border border-rose-800 px-2 py-0.5 rounded">Practice Required</span>';
+                }
+
+                topicsGrid.innerHTML += `
+                    <div class="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-700/60 flex flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white truncate max-w-[180px]">${topic}</span>
+                            ${masteryTag}
+                        </div>
+                        <div class="flex justify-between items-center text-[11px] text-slate-400 font-mono">
+                            <span>${tAns} solved (${tCorr} correct)</span>
+                            <span class="${tPct >= 70 ? 'text-emerald-400' : 'text-slate-300'} font-bold">${tPct}%</span>
+                        </div>
+                        <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                            <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 progress-bar-fill" style="width: ${tPct}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function saveUserProfile() {
+            try {
+                localStorage.setItem('csso_user_profile', JSON.stringify(userProfile));
+            } catch(e) {}
+            
+            updateGlobalUIHeaders();
+
+            if (isFirebaseInitialized && currentUser) {
+                try {
+                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                    await setDoc(userRef, userProfile, { merge: true });
+                } catch(e) {
+                    console.warn("Firestore profile save skipped, preserved locally:", e);
+                }
+            }
         }
 
         // ---------------------------------------------------------
@@ -510,6 +1056,9 @@
                     this.genSpecTrigIdentity.bind(this),
                     this.genSpecTrigDoubleAngle.bind(this),
                     this.genSpecMatricesDeterminant.bind(this),
+                    this.genSpecMatricesInverse.bind(this),
+                    this.genSpecComplexModulus.bind(this),
+                    this.genSpecComplexConjugateMult.bind(this),
                     this.genMethComplexShortAns.bind(this),
                     this.genMethMultiStepCalculus.bind(this),
                     this.genSpecMultiStepVectors.bind(this),
@@ -593,12 +1142,12 @@
             }
 
             genMethMultiStepCalculus() {
-                const a = Math.floor(Math.random() * 3) + 2; // coefficient
+                const a = Math.floor(Math.random() * 3) + 2;
                 const c = Math.floor(Math.random() * 5) + 1;
                 return {
                     type: 'multi_step',
                     topic: 'Rates of Change',
-                    text: `Multi-Step Polynomial Derivative`,
+                    text: `Multi-Step Polynomial Derivative (${a}x^2 + ${c}x)`,
                     steps: [
                         {
                             prompt: `Step 1: Differentiate $f(x) = ${a}x^2 + ${c}x$.`,
@@ -622,7 +1171,7 @@
                 return {
                     type: 'multi_step',
                     topic: 'Vectors in the Plane',
-                    text: `Multi-Step Vector Operations`,
+                    text: `Multi-Step Vector Operations (${x}i + ${y}j)`,
                     steps: [
                         {
                             prompt: `Step 1: Given $\\mathbf{a} = ${x}\\mathbf{i} + ${y}\\mathbf{j}$, find the dot product $\\mathbf{a} \\cdot (2\\mathbf{i} + 3\\mathbf{j})$.`,
@@ -652,14 +1201,14 @@
             }
 
             genMethProbabilityBinomialMulti() {
-                const n = Math.floor(Math.random() * 10) * 10 + 20; // 20, 30, ... 110
+                const n = Math.floor(Math.random() * 10) * 10 + 20;
                 const p = 0.5;
                 const mean = n * p;
                 const variance = n * p * (1 - p);
                 return {
                     type: 'multi_step',
                     topic: 'Counting and Probability',
-                    text: `Binomial Distribution Analysis`,
+                    text: `Binomial Distribution Analysis (n=${n})`,
                     steps: [
                         {
                             prompt: `Step 1: A random variable $X \\sim B(${n}, 0.5)$. Find the expected value $E(X)$.`,
@@ -676,12 +1225,12 @@
             }
 
             genSpecComplexRootsMulti() {
-                const a = Math.floor(Math.random() * 4) + 1; // 1 to 4
+                const a = Math.floor(Math.random() * 4) + 1;
                 const r = 2 * a;
                 return {
                     type: 'multi_step',
                     topic: 'Real and Complex Numbers',
-                    text: `Complex Number Polar Form`,
+                    text: `Complex Number Polar Form (${a})`,
                     steps: [
                         {
                             prompt: `Step 1: Find the modulus $|z|$ of $z = ${a} + ${a}\\sqrt{3}i$.`,
@@ -707,7 +1256,7 @@
                 return {
                     type: 'multi_step',
                     topic: 'Matrices',
-                    text: `System of Linear Equations`,
+                    text: `System of Linear Equations (${a},${b},${c},${d})`,
                     steps: [
                         {
                             prompt: `Step 1: Consider the matrix $M = \\begin{bmatrix} ${a} & ${b} \\\\ ${c} & ${d} \\end{bmatrix}$. Find $|M|$.`,
@@ -768,253 +1317,274 @@
 
             genMethTrigPeriod() {
                 const b = Math.floor(Math.random()*4)+2;
-                return this.formatQuestion('Trigonometric Functions', `What is the fundamental period of the function $y = \\tan(\\frac{x}{${b}})$?`, `$${b}\\pi$`, [`$\\frac{\\pi}{${b}}$`, `$2\\pi$`, `$\\frac{2\\pi}{${b}}$`]);
+                return this.formatQuestion('Trigonometric Functions', `What is the period of the function $f(x) = \\sin(${b}x)$?`, `$\\frac{2\\pi}{${b}}$`, [`$\\frac{\\pi}{${b}}$`, `$${b}\\pi$`, `$2\\pi$`]);
             }
 
             genMethTrigExactVal() {
                 const vals = [
-                    { q: '\\sin(\\frac{\\pi}{6})', a: '\\frac{1}{2}' },
-                    { q: '\\cos(\\frac{\\pi}{3})', a: '\\frac{1}{2}' },
-                    { q: '\\tan(\\frac{\\pi}{4})', a: '1' },
-                    { q: '\\sin(\\frac{\\pi}{4})', a: '\\frac{\\sqrt{2}}{2}' }
+                    { q: '\\sin\\left(\\frac{\\pi}{6}\\right)', a: '\\frac{1}{2}', dist: ['\\frac{\\sqrt{3}}{2}', '\\frac{\\sqrt{2}}{2}', '1'] },
+                    { q: '\\cos\\left(\\frac{\\pi}{3}\\right)', a: '\\frac{1}{2}', dist: ['\\frac{\\sqrt{3}}{2}', '\\frac{\\sqrt{2}}{2}', '0'] },
+                    { q: '\\tan\\left(\\frac{\\pi}{4}\\right)', a: '1', dist: ['\\sqrt{3}', '\\frac{1}{\\sqrt{3}}', '0'] },
+                    { q: '\\cos\\left(\\frac{\\pi}{4}\\right)', a: '\\frac{1}{\\sqrt{2}}', dist: ['\\frac{1}{2}', '\\frac{\\sqrt{3}}{2}', '1'] }
                 ];
-                const choice = vals[Math.floor(Math.random()*vals.length)];
-                return this.formatQuestion('Trigonometric Functions', `Evaluate exactly: $${choice.q}$`, `$${choice.a}$`, [`$0$`, `$\\frac{\\sqrt{3}}{2}$`, `$-1$`]);
+                const choice = vals[Math.floor(Math.random() * vals.length)];
+                return this.formatQuestion('Trigonometric Functions', `Find the exact value of $${choice.q}$.`, `$${choice.a}$`, choice.dist.map(d => `$${d}$`));
             }
 
             genMethTrigEquation() {
-                const b = Math.floor(Math.random()*3)+2;
-                return this.formatQuestion('Trigonometric Functions', `Solve for $x \\in [0, \\pi]$: $\\sin(${b}x) = 0$ (Smallest non-zero positive solution)`, `$\\frac{\\pi}{${b}}$`, [`$\\pi$`, `$\\frac{\\pi}{${b*2}}$`, `$\\frac{2\\pi}{${b}}$`]);
+                return this.formatQuestion('Trigonometric Functions', `Solve $2\\cos(x) - 1 = 0$ for $0 \\le x \\le \\pi$.`, `$x = \\frac{\\pi}{3}$`, [`$x = \\frac{\\pi}{6}$`, `$x = \\frac{2\\pi}{3}$`, `$x = \\frac{5\\pi}{6}$`]);
             }
 
             genMethCountingIndependent() {
-                const p1 = Math.floor(Math.random()*4)+2;
-                const p2 = Math.floor(Math.random()*4)+2;
-                return this.formatQuestion('Counting and Probability', `Events $A$ and $B$ are independent. If $P(A) = \\frac{1}{${p1}}$ and $P(B) = \\frac{1}{${p2}}$, find $P(A \\cap B)$.`, `$\\frac{1}{${p1*p2}}$`, [`$\\frac{1}{${p1+p2}}$`, `$\\frac{${p1+p2}}{${p1*p2}}$`, `$\\frac{2}{${p1*p2}}$`]);
+                const pA = 0.4;
+                const pB = 0.5;
+                const ans = (pA * pB).toFixed(2);
+                return this.formatQuestion('Counting and Probability', `Events $A$ and $B$ are independent. If $P(A) = 0.4$ and $P(B) = 0.5$, find $P(A \\cap B)$.`, `$${ans}$`, [`$0.90$`, `$0.10$`, `$0.25$`]);
             }
 
             genMethCountingConditional() {
-                const aAndB = Math.floor(Math.random()*3)+1;
-                const b = aAndB + Math.floor(Math.random()*4)+1;
-                const denom = 20;
-                return this.formatQuestion('Counting and Probability', `If $P(A \\cap B) = \\frac{${aAndB}}{${denom}}$ and $P(B) = \\frac{${b}}{${denom}}$, find $P(A|B)$.`, `$\\frac{${aAndB}}{${b}}$`, [`$\\frac{${aAndB}}{${denom}}$`, `$\\frac{${b}}{${aAndB}}$`, `$\\frac{${aAndB*b}}{${denom*denom}}$`]);
+                return this.formatQuestion('Counting and Probability', `If $P(A \\cap B) = 0.2$ and $P(B) = 0.5$, find $P(A|B)$.`, `$0.4$`, [`$0.1$`, `$0.7$`, `$0.25$`]);
             }
 
             genMethExponentialSolve() {
-                const base = Math.floor(Math.random()*3)+2;
-                const exp = Math.floor(Math.random()*4)+2;
-                const val = Math.pow(base, exp);
-                return this.formatQuestion('Exponential Functions', `Solve for $x$: $${base}^{2x} = ${val}$`, `$x = ${exp/2}$`, [`$x = ${exp}$`, `$x = ${exp*2}$`, `$x = ${val/base}$`]);
+                const x = Math.floor(Math.random()*3)+2;
+                const rhs = Math.pow(2, x);
+                return this.formatQuestion('Exponential Functions', `Solve for $x$: $2^x = ${rhs}$.`, `$x = ${x}$`, [`$x = ${x+1}$`, `$x = ${x-1}$`, `$x = ${x*2}$`]);
             }
 
             genMethExponentialLogRule() {
                 const a = Math.floor(Math.random()*4)+2;
-                const b = Math.floor(Math.random()*4)+3;
-                return this.formatQuestion('Exponential Functions', `Express as a single logarithm: $\\log_2(${a}) + \\log_2(${b})$`, `$\\log_2(${a*b})$`, [`$\\log_2(${a+b})$`, `$\\log_2(${a}^${b})$`, `$\\log_2(\\frac{${a}}{${b}})$`]);
+                const b = Math.floor(Math.random()*4)+2;
+                return this.formatQuestion('Exponential Functions', `Simplify $\\ln(${a}) + \\ln(${b})$.`, `$\\ln(${a*b})$`, [`$\\ln(${a+b})$`, `$\\ln\\left(\\frac{${a}}{${b}}\\right)$`, `$${a*b}$`]);
             }
 
             genMethSequencesArith() {
                 const a = Math.floor(Math.random()*5)+1;
-                const d = Math.floor(Math.random()*5)+2;
-                const n = Math.floor(Math.random()*10)+5;
+                const d = Math.floor(Math.random()*4)+2;
+                const n = 10;
                 const ans = a + (n-1)*d;
-                return this.formatQuestion('Sequences and Series', `Find the $${n}^{\\text{th}}$ term of the arithmetic sequence starting with $a_1=${a}$ and common difference $d=${d}$.`, `$${ans}$`, [`$${ans+d}$`, `$${ans-d}$`, `$${a + n*d}$`]);
+                return this.formatQuestion('Sequences and Series', `Find the 10th term of the arithmetic sequence: $${a}, ${a+d}, ${a+2*d}, \\dots$`, `$${ans}$`, [`$${ans+d}$`, `$${ans-d}$`, `$${ans+2*d}$`]);
             }
-            
+
             genMethSequencesGeom() {
-                const a = Math.floor(Math.random()*3)+2;
-                const r = Math.floor(Math.random()*2)+2;
-                const n = Math.floor(Math.random()*3)+3;
+                const a = 2;
+                const r = 3;
+                const n = 4;
                 const ans = a * Math.pow(r, n-1);
-                return this.formatQuestion('Sequences and Series', `Find the $${n}^{\\text{th}}$ term of the geometric sequence where $a_1=${a}$ and $r=${r}$.`, `$${ans}$`, [`$${a * Math.pow(r, n)}$`, `$${a * r * n}$`, `$${a + r*n}$`]);
+                return this.formatQuestion('Sequences and Series', `Find the 4th term of the geometric sequence: $2, 6, 18, \\dots$`, `$${ans}$`, [`$162$`, `$36$`, `$72$`]);
             }
 
             genMethSequencesInfinite() {
-                const a = Math.floor(Math.random()*10)+2;
-                const rDenom = Math.floor(Math.random()*3)+2;
-                const sum = (a * rDenom) / (rDenom - 1);
-                return this.formatQuestion('Sequences and Series', `Evaluate the sum to infinity of a geometric series with $a=${a}$ and $r=\\frac{1}{${rDenom}}$.`, `$${sum}$`, [`$${a*rDenom}$`, `$${a/(rDenom)}$`, `$\\infty$`]);
+                const a = 6;
+                const r = '1/2';
+                return this.formatQuestion('Sequences and Series', `Find the sum to infinity of the series $6 + 3 + 1.5 + \\dots$`, `$12$`, [`$18$`, `$9$`, `$24$`]);
             }
 
             genMethRatesAverage() {
-                const x1 = Math.floor(Math.random()*2)+1;
-                const x2 = x1 + Math.floor(Math.random()*3)+1;
-                const y1 = x1*x1;
-                const y2 = x2*x2;
-                const rate = (y2 - y1) / (x2 - x1);
-                return this.formatQuestion('Rates of Change', `Find the average rate of change of $f(x) = x^2$ from $x = ${x1}$ to $x = ${x2}$.`, `$${rate}$`, [`$${rate+1}$`, `$${rate-1}$`, `$${x2-x1}$`]);
+                return this.formatQuestion('Rates of Change', `Find the average rate of change of $f(x) = x^2$ between $x = 1$ and $x = 4$.`, `$5$`, [`$3$`, `$15$`, `$4$`]);
             }
 
             genMethRatesPowerRule() {
-                const n = Math.floor(Math.random()*4)+3;
-                const a = Math.floor(Math.random()*4)+2;
-                return this.formatQuestion('Rates of Change', `Find the instantaneous rate of change (derivative) of $f(x) = ${a}x^{${n}}$ with respect to $x$.`, `$${a*n}x^{${n-1}}$`, [`$${a}x^{${n-1}}$`, `$${a*n}x^{${n}}$`, `$\\frac{${a}}{${n+1}}x^{${n+1}}$`]);
+                const n = Math.floor(Math.random()*4)+2;
+                const c = Math.floor(Math.random()*4)+2;
+                return this.formatQuestion('Rates of Change', `Differentiate $f(x) = ${c}x^{${n}}$.`, `$${c*n}x^{${n-1}}$`, [`$${c}x^{${n-1}}$`, `$${c*n}x^{${n}}$`, `$${n}x^{${n-1}}$`]);
             }
 
             genSpecGeomCenterCircumference() {
-                const angleAtCenter = (Math.floor(Math.random() * 30) + 40) * 2;
-                const angleAtCircum = angleAtCenter / 2;
-                const A = SvgBuilder.polarToCartesian(100, 210);
-                const B = SvgBuilder.polarToCartesian(100, 330);
-                const C = SvgBuilder.polarToCartesian(100, 90);
+                const inscribed = Math.floor(Math.random() * 30) + 25;
+                const central = inscribed * 2;
+                const pA = SvgBuilder.polarToCartesian(100, 210);
+                const pB = SvgBuilder.polarToCartesian(100, 330);
+                const pP = SvgBuilder.polarToCartesian(100, 80);
+                const pO = { x: 0, y: 0 };
                 const visual = SvgBuilder.circleTemplate(`
-                    ${SvgBuilder.path([{x:0, y:0}, A])}
-                    ${SvgBuilder.path([{x:0, y:0}, B])}
-                    ${SvgBuilder.path([A, C, B])}
-                    ${SvgBuilder.dot({x:0, y:0}, 'O', {x:0, y:15})}
-                    ${SvgBuilder.dot(A, 'A', {x:-15, y:10})}
-                    ${SvgBuilder.dot(B, 'B', {x:15, y:10})}
-                    ${SvgBuilder.dot(C, 'C', {x:0, y:-15})}
-                    ${SvgBuilder.text(0, -15, angleAtCenter + "°")}
-                    ${SvgBuilder.text(C.x, C.y + 25, "θ")}
+                    ${SvgBuilder.line(pA, pO, '#6366f1')}
+                    ${SvgBuilder.line(pB, pO, '#6366f1')}
+                    ${SvgBuilder.line(pA, pP, '#94a3b8')}
+                    ${SvgBuilder.line(pB, pP, '#94a3b8')}
+                    ${SvgBuilder.dot(pO, 'O', {x: 0, y: 15})}
+                    ${SvgBuilder.dot(pA, 'A', {x: -15, y: 10})}
+                    ${SvgBuilder.dot(pB, 'B', {x: 15, y: 10})}
+                    ${SvgBuilder.dot(pP, 'P', {x: 0, y: -15})}
+                    ${SvgBuilder.text(pP.x, pP.y + 30, `${inscribed}°`, '#818cf8')}
+                    ${SvgBuilder.text(0, -20, 'θ', '#c084fc')}
                 `);
-                return this.formatQuestion('Geometry', `In the diagram, the angle at the centre is $${angleAtCenter}^\\circ$. Find the angle $\\theta$ at the circumference.`, `$${angleAtCircum}^\\circ$`, [`$${angleAtCenter}^\\circ$`, `$${angleAtCircum * 2 + 10}^\\circ$`, `$${180 - angleAtCenter}^\\circ$`], visual);
+                return {
+                    topic: 'Geometry',
+                    text: `In the circle with centre $O$, $\\angle APB = ${inscribed}^\\circ$. Find the angle subtended at the centre, $\\theta = \\angle AOB$.`,
+                    visual: visual,
+                    options: [`$${central}^\\circ$`, `$${inscribed}^\\circ$`, `$${180 - inscribed}^\\circ$`, `$${central / 2}^\\circ$`],
+                    ansIndex: 0
+                };
             }
 
             genSpecGeomCyclicQuad() {
-                const oppAngle = Math.floor(Math.random() * 40) + 60;
-                const ansAngle = 180 - oppAngle;
-                const A = SvgBuilder.polarToCartesian(100, 200);
-                const B = SvgBuilder.polarToCartesian(100, 340);
-                const C = SvgBuilder.polarToCartesian(100, 60);
-                const D = SvgBuilder.polarToCartesian(100, 120);
+                const angleA = Math.floor(Math.random() * 35) + 65;
+                const angleC = 180 - angleA;
+                const pA = SvgBuilder.polarToCartesian(100, 135);
+                const pB = SvgBuilder.polarToCartesian(100, 45);
+                const pC = SvgBuilder.polarToCartesian(100, 315);
+                const pD = SvgBuilder.polarToCartesian(100, 225);
                 const visual = SvgBuilder.circleTemplate(`
-                    ${SvgBuilder.path([A, B, C, D], true)}
-                    ${SvgBuilder.dot(A, 'A', {x:-15, y:10})}
-                    ${SvgBuilder.dot(B, 'B', {x:15, y:10})}
-                    ${SvgBuilder.dot(C, 'C', {x:15, y:-10})}
-                    ${SvgBuilder.dot(D, 'D', {x:-15, y:-10})}
-                    ${SvgBuilder.text(A.x + 20, A.y - 10, oppAngle + "°")}
-                    ${SvgBuilder.text(C.x - 15, C.y + 20, "x")}
+                    ${SvgBuilder.path([pA, pB, pC, pD], true, '#818cf8')}
+                    ${SvgBuilder.dot(pA, 'A', {x: -12, y: -12})}
+                    ${SvgBuilder.dot(pB, 'B', {x: 12, y: -12})}
+                    ${SvgBuilder.dot(pC, 'C', {x: 12, y: 15})}
+                    ${SvgBuilder.dot(pD, 'D', {x: -12, y: 15})}
+                    ${SvgBuilder.text(pA.x + 20, pA.y + 20, `${angleA}°`, '#f8fafc')}
+                    ${SvgBuilder.text(pC.x - 20, pC.y - 20, 'x', '#c084fc')}
                 `);
-                return this.formatQuestion('Geometry', `$ABCD$ is a cyclic quadrilateral. Find the value of angle $x$.`, `$${ansAngle}^\\circ$`, [`$${oppAngle}^\\circ$`, `$${90 - oppAngle/2}^\\circ$`, `$${360 - oppAngle}^\\circ$`], visual);
+                return {
+                    topic: 'Geometry',
+                    text: `Given the cyclic quadrilateral $ABCD$ inscribed in the circle, find $x = \\angle BCD$.`,
+                    visual: visual,
+                    options: [`$${angleC}^\\circ$`, `$${angleA}^\\circ$`, `$${90 + angleA}^\\circ$`, `$${360 - angleA}^\\circ$`],
+                    ansIndex: 0
+                };
             }
 
             genSpecGeomSemicircle() {
-                const knownAngle = Math.floor(Math.random() * 40) + 20;
-                const ansAngle = 90 - knownAngle;
-                const A = SvgBuilder.polarToCartesian(100, 180);
-                const B = SvgBuilder.polarToCartesian(100, 0);
-                const C = SvgBuilder.polarToCartesian(100, 60);
+                const angleB = Math.floor(Math.random() * 30) + 25;
+                const angleA = 90 - angleB;
+                const pA = SvgBuilder.polarToCartesian(100, 180);
+                const pB = SvgBuilder.polarToCartesian(100, 0);
+                const pC = SvgBuilder.polarToCartesian(100, 60);
                 const visual = SvgBuilder.circleTemplate(`
-                    ${SvgBuilder.line(A, B)}
-                    ${SvgBuilder.path([A, C, B])}
-                    ${SvgBuilder.dot(A, 'A', {x:-15, y:0})}
-                    ${SvgBuilder.dot(B, 'B', {x:15, y:0})}
-                    ${SvgBuilder.dot(C, 'C', {x:0, y:-15})}
-                    ${SvgBuilder.text(A.x + 30, A.y - 10, knownAngle + "°")}
-                    ${SvgBuilder.text(B.x - 20, B.y - 10, "y")}
+                    ${SvgBuilder.line(pA, pB, '#6366f1')}
+                    ${SvgBuilder.line(pA, pC, '#94a3b8')}
+                    ${SvgBuilder.line(pB, pC, '#94a3b8')}
+                    ${SvgBuilder.dot({x:0, y:0}, 'O', {x:0, y:15})}
+                    ${SvgBuilder.dot(pA, 'A', {x: -15, y: 0})}
+                    ${SvgBuilder.dot(pB, 'B', {x: 15, y: 0})}
+                    ${SvgBuilder.dot(pC, 'C', {x: 10, y: -15})}
+                    ${SvgBuilder.text(pB.x - 30, pB.y - 10, `${angleB}°`, '#f8fafc')}
+                    ${SvgBuilder.text(pA.x + 30, pA.y - 10, 'θ', '#c084fc')}
                 `);
-                return this.formatQuestion('Geometry', `$AB$ is the diameter of the circle. Find the value of angle $y$.`, `$${ansAngle}^\\circ$`, [`$90^\\circ$`, `$${knownAngle}^\\circ$`, `$${180 - knownAngle}^\\circ$`], visual);
+                return {
+                    topic: 'Geometry',
+                    text: `Diameter $AB$ passes through the centre $O$. If $\\angle CBA = ${angleB}^\\circ$, find $\\theta = \\angle CAB$.`,
+                    visual: visual,
+                    options: [`$${angleA}^\\circ$`, `$${angleB}^\\circ$`, `$${180 - angleB}^\\circ$`, `$90^\\circ$`],
+                    ansIndex: 0
+                };
             }
 
             genSpecGeomAlternateSegment() {
-                const altAngle = Math.floor(Math.random() * 30) + 40;
-                const A = SvgBuilder.polarToCartesian(100, 270);
-                const B = SvgBuilder.polarToCartesian(100, 350);
-                const C = SvgBuilder.polarToCartesian(100, 150);
+                const angle = Math.floor(Math.random() * 25) + 40;
+                const pA = SvgBuilder.polarToCartesian(100, 270);
+                const pB = SvgBuilder.polarToCartesian(100, 140);
+                const pC = SvgBuilder.polarToCartesian(100, 40);
                 const visual = SvgBuilder.circleTemplate(`
-                    ${SvgBuilder.path([A, B, C], true)}
-                    ${SvgBuilder.line({x: A.x - 80, y: A.y}, {x: A.x + 80, y: A.y}, "#f43f5e")}
-                    ${SvgBuilder.dot(A, 'A', {x:0, y:20})}
-                    ${SvgBuilder.dot(B, 'B', {x:15, y:0})}
-                    ${SvgBuilder.dot(C, 'C', {x:-15, y:-15})}
-                    ${SvgBuilder.text(A.x + 30, A.y - 10, altAngle + "°")}
-                    ${SvgBuilder.text(C.x + 20, C.y + 20, "α")}
+                    ${SvgBuilder.line({x: -120, y: pA.y}, {x: 120, y: pA.y}, '#ec4899')}
+                    ${SvgBuilder.path([pA, pB, pC], true, '#818cf8')}
+                    ${SvgBuilder.dot(pA, 'T', {x: 0, y: 15})}
+                    ${SvgBuilder.dot(pB, 'A', {x: -15, y: -10})}
+                    ${SvgBuilder.dot(pC, 'B', {x: 15, y: -10})}
+                    ${SvgBuilder.text(pA.x + 40, pA.y - 10, `${angle}°`, '#cbd5e1')}
+                    ${SvgBuilder.text(pB.x + 20, pB.y + 20, 'θ', '#c084fc')}
                 `);
-                return this.formatQuestion('Geometry', `A tangent touches the circle at $A$. Find the angle $\\alpha$ in the alternate segment.`, `$${altAngle}^\\circ$`, [`$${altAngle * 2}^\\circ$`, `$${90 - altAngle}^\\circ$`, `$${180 - altAngle}^\\circ$`], visual);
+                return {
+                    topic: 'Geometry',
+                    text: `A tangent touches the circle at $T$. Using the alternate segment theorem, find $\\theta = \\angle TAB$.`,
+                    visual: visual,
+                    options: [`$${angle}^\\circ$`, `$${180 - angle}^\\circ$`, `$${90 - angle}^\\circ$`, `$${2 * angle}^\\circ$`],
+                    ansIndex: 0
+                };
             }
 
             genSpecCombinatoricsPerm() {
-                const n = Math.floor(Math.random()*4)+5;
-                const r = Math.floor(Math.random()*2)+2;
-                let nPr = 1;
-                for(let i=0; i<r; i++) nPr *= (n-i);
-                return this.formatQuestion('Combinatorics', `Evaluate the permutation ${n}P${r}.`, `$${nPr}$`, [`$${nPr * 2}$`, `$${Math.floor(nPr / r)}$`, `$${nPr + r}$`]);
+                return this.formatQuestion('Combinatorics', `Evaluate $^5P_3$.`, `$60$`, [`$20$`, `$120$`, `$10$`]);
             }
-            
+
             genSpecCombinatoricsComb() {
-                const n = Math.floor(Math.random()*3)+5;
-                const r = 2;
-                const nCr = (n * (n-1)) / 2;
-                return this.formatQuestion('Combinatorics', `How many ways can you choose ${r} items from a set of ${n}? (${n}C${r})`, `$${nCr}$`, [`$${nCr * 2}$`, `$${nCr + 2}$`, `$${n * r}$`]);
+                return this.formatQuestion('Combinatorics', `Evaluate $\\binom{6}{2}$.`, `$15$`, [`$30$`, `$12$`, `$20$`]);
             }
 
             genSpecVectorsMagnitude() {
-                const x = Math.floor(Math.random()*3)+1;
-                const y = Math.floor(Math.random()*3)+1;
-                const magSq = x*x + y*y;
-                return this.formatQuestion('Vectors in the Plane', `If $\\vec{u} = ${x}\\mathbf{i} + ${y}\\mathbf{j}$, what is the value of $|\\vec{u}|^2$?`, `$${magSq}$`, [`$${magSq+1}$`, `$${x+y}$`, `$\\sqrt{${magSq}}$`]);
+                return this.formatQuestion('Vectors in the Plane', `Find the magnitude of $\\mathbf{v} = 3\\mathbf{i} - 4\\mathbf{j}$.`, `$5$`, [`$7$`, `$\\sqrt{7}$`, `$25$`]);
             }
 
             genSpecVectorsDotProduct() {
-                const x1 = Math.floor(Math.random()*4)+1;
-                const y1 = Math.floor(Math.random()*4)+1;
-                const x2 = Math.floor(Math.random()*4)-2;
-                const y2 = Math.floor(Math.random()*4)-2;
-                const dot = (x1*x2) + (y1*y2);
-                return this.formatQuestion('Vectors in the Plane', `Find the dot product of $\\vec{u} = (${x1}, ${y1})$ and $\\vec{v} = (${x2}, ${y2})$.`, `$${dot}$`, [`$${dot+2}$`, `$${dot-1}$`, `$${x1*y1 + x2*y2}$`]);
+                const a1 = Math.floor(Math.random()*4)+1;
+                const a2 = Math.floor(Math.random()*4)+1;
+                const b1 = Math.floor(Math.random()*4)+1;
+                const b2 = Math.floor(Math.random()*4)+1;
+                const ans = (a1*b1) + (a2*b2);
+                return this.formatQuestion('Vectors in the Plane', `Find $\\mathbf{a} \\cdot \\mathbf{b}$ for $\\mathbf{a} = ${a1}\\mathbf{i} + ${a2}\\mathbf{j}$ and $\\mathbf{b} = ${b1}\\mathbf{i} + ${b2}\\mathbf{j}$.`, `$${ans}$`, [`$${ans+2}$`, `$${ans-3}$`, `$${a1*b1 - a2*b2}$`]);
             }
 
             genSpecTrigIdentity() {
-                return this.formatQuestion('Trigonometry (Spec)', `Which of the following is equivalent to $\\sec^2(\\theta) - 1$?`, `$\\tan^2(\\theta)$`, [`$\\cot^2(\\theta)$`, `$\\sin^2(\\theta)$`, `$1$`]);
+                return this.formatQuestion('Trigonometry (Spec)', `Simplify $\\sin^2(x) + \\cos^2(x)$.`, `$1$`, [`$\\tan^2(x)$`, `$0$`, `$2\\sin(x)$`]);
             }
 
             genSpecTrigDoubleAngle() {
-                return this.formatQuestion('Trigonometry (Spec)', `Which of the following expressions is identically equal to $\\cos(2\\theta)$?`, `$\\cos^2(\\theta) - \\sin^2(\\theta)$`, [`$2\\sin(\\theta)\\cos(\\theta)$`, `$\\sin^2(\\theta) - \\cos^2(\\theta)$`, `$1 + 2\\sin^2(\\theta)$`]);
+                return this.formatQuestion('Trigonometry (Spec)', `Which expression is equivalent to $\\sin(2x)$?`, `$2\\sin(x)\\cos(x)$`, [`$\\cos^2(x) - \\sin^2(x)$`, `$2\\sin(x)$`, `$\\sin^2(x)$`]);
             }
 
             genSpecMatricesDeterminant() {
-                const a = Math.floor(Math.random()*5)+1;
-                const b = Math.floor(Math.random()*5)+1;
-                const c = Math.floor(Math.random()*5)+1;
-                const d = Math.floor(Math.random()*5)+1;
+                const a = Math.floor(Math.random()*4)+1;
+                const b = Math.floor(Math.random()*3)+1;
+                const c = Math.floor(Math.random()*3)+1;
+                const d = Math.floor(Math.random()*4)+1;
                 const det = (a*d) - (b*c);
-                return this.formatQuestion('Matrices', `Find the determinant of $M = \\begin{bmatrix} ${a} & ${b} \\\\ ${c} & ${d} \\end{bmatrix}$`, `$${det}$`, [`$${(a*c) - (b*d)}$`, `$${(a*d) + (b*c)}$`, `$${det+2}$`]);
+                return this.formatQuestion('Matrices', `Find the determinant of $\\begin{bmatrix} ${a} & ${b} \\\\ ${c} & ${d} \\end{bmatrix}$.`, `$${det}$`, [`$${det+4}$`, `$${(a*d)+(b*c)}$`, `$${det-2}$`]);
             }
 
             genSpecMatricesInverse() {
-                return this.formatQuestion('Matrices', `If matrix $A$ has determinant $0$, which of the following is true?`, `$A$ does not have an inverse.`, [`$A$ is the identity matrix.`, `The inverse of $A$ is $0$.`, `$A$ is symmetric.`]);
+                return this.formatQuestion('Matrices', `What is the condition for matrix $M$ to have an inverse $M^{-1}$?`, `$\\det(M) \\neq 0$`, [`$\\det(M) = 0$`, `$\\text{Trace}(M) > 0$`, `$M$ is a diagonal matrix`]);
             }
 
             genSpecComplexModulus() {
-                const r1 = Math.floor(Math.random()*3)+1;
-                const i1 = Math.floor(Math.random()*3)+1;
-                const ans = r1*r1 + i1*i1;
-                return this.formatQuestion('Real and Complex Numbers', `If complex number $z = ${r1} + ${i1}i$, evaluate $|z|^2$.`, `$${ans}$`, [`$${ans+2}$`, `$${r1*r1 - i1*i1}$`, `$${ans}i$`]);
+                return this.formatQuestion('Real and Complex Numbers', `Find the modulus of $z = 1 + i$.`, `$\\sqrt{2}$`, [`$2$`, `$1$`, `$\\sqrt{3}$`]);
             }
 
             genSpecComplexConjugateMult() {
-                const a = Math.floor(Math.random()*4)+2;
-                return this.formatQuestion('Real and Complex Numbers', `Evaluate $(${a} + i)(${a} - i)$.`, `$${a*a + 1}$`, [`$${a*a - 1}$`, `$${a*a}$`, `$${a*a + 1}i$`]);
+                return this.formatQuestion('Real and Complex Numbers', `If $z = 2 + 3i$, find $z \\bar{z}$.`, `$13$`, [`$4 - 9i$`, `$-5$`, `$13 + 12i$`]);
             }
 
-            formatQuestion(topic, text, correctAns, wrongAnsArray, visual = null) {
-                let options = Array.from(new Set([correctAns, ...wrongAnsArray]));
-                while(options.length < 4) {
-                    options.push(`$${Math.floor(Math.random()*100)}$`);
-                }
-                options = options.slice(0, 4);
-                
+            formatQuestion(topic, text, correct, distractors) {
+                const options = [correct, ...distractors];
                 for (let i = options.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [options[i], options[j]] = [options[j], options[i]];
                 }
-                
-                return { topic, text, options, ansIndex: options.indexOf(correctAns), visual };
+                return {
+                    topic: topic,
+                    text: text,
+                    options: options,
+                    ansIndex: options.indexOf(correct)
+                };
             }
 
             generateMatchSet(topics, count = 50) {
+                if (!topics || !Array.isArray(topics) || topics.length === 0) {
+                    topics = [
+                        'Functions and Graphs', 'Trigonometric Functions', 'Counting and Probability',
+                        'Exponential Functions', 'Sequences and Series', 'Rates of Change',
+                        'Geometry', 'Combinatorics', 'Vectors in the Plane', 'Trigonometry (Spec)',
+                        'Matrices', 'Real and Complex Numbers'
+                    ];
+                }
+
                 let pool = [];
                 pool.push(...this.staticQuestions.filter(q => topics.includes(q.topic)));
                 
+                const getQuestionKey = (q) => {
+                    if (!q) return '';
+                    if (q.type === 'multi_step' && Array.isArray(q.steps)) {
+                        return q.topic + '::' + q.steps.map(s => s.prompt || s.text || '').join('||');
+                    }
+                    return q.topic + '::' + (q.text || '') + '::' + (q.options ? q.options.join('|') : (q.acceptableAnswers ? q.acceptableAnswers.join('|') : ''));
+                };
+
                 let attempts = 0;
-                while(pool.length < count && attempts < 2000) {
+                while(pool.length < count && attempts < 2500) {
                     attempts++;
                     const gen = this.generators[Math.floor(Math.random() * this.generators.length)];
                     const q = gen();
-                    if (topics.includes(q.topic)) {
-                        if(!pool.find(existing => existing.text === q.text)) {
+                    if (q && topics.includes(q.topic)) {
+                        const qKey = getQuestionKey(q);
+                        if (!pool.some(existing => getQuestionKey(existing) === qKey)) {
                             pool.push(q);
                         }
                     }
@@ -1032,7 +1602,34 @@
         const qdb = new QuestionDB();
 
         // ---------------------------------------------------------
-        // ROBUST AUTHENTICATION & FALLBACK HANDLING
+        // FIREBASE QUESTION BANK SYNCHRONIZATION
+        // ---------------------------------------------------------
+        async function syncQuestionBankToFirestore() {
+            if (!isFirebaseInitialized) {
+                showToast("Firebase offline. Using local question engine.");
+                return;
+            }
+            try {
+                showToast("Syncing question bank to Firestore...");
+                const batch = writeBatch(db);
+                const qColl = collection(db, 'artifacts', appId, 'public', 'data', 'questions');
+                
+                qdb.staticQuestions.forEach((q, idx) => {
+                    const docId = `static_${idx}_${q.topic.replace(/\\s+/g, '_')}`;
+                    const docRef = doc(qColl, docId);
+                    batch.set(docRef, { ...q, seededAt: new Date().toISOString() });
+                });
+
+                await batch.commit();
+                showToast("Question Bank synced to Firestore!");
+            } catch (err) {
+                console.warn("Firestore question bank sync note:", err);
+                showToast("Question bank ready (Local cache active).");
+            }
+        }
+
+        // ---------------------------------------------------------
+        // AUTHENTICATION & SESSION HANDLING
         // ---------------------------------------------------------
         async function initAuth() {
             try {
@@ -1041,19 +1638,19 @@
                 } else if (isFirebaseInitialized) {
                     await signInAnonymously(auth);
                 } else {
-                    // Fully offline/sandboxed fallback user
                     handleFallbackUser();
                 }
             } catch (err) {
-                console.warn("Auth initialization notice, falling back to local user session:", err);
+                console.warn("Auth initialization notice:", err);
                 handleFallbackUser();
             }
         }
 
         function handleFallbackUser() {
-            currentUser = { uid: 'guest-' + Math.random().toString(36).substring(2, 9), displayName: 'Guest Player' };
-            userProfile = { name: currentUser.displayName, elo: 1200 };
-            showScreen('home');
+            if (!currentUser) {
+                currentUser = { uid: 'guest_' + Math.random().toString(36).substring(2, 9), displayName: userProfile.name || 'Guest Contender' };
+            }
+            showScreen('landing');
             showProfileUI();
         }
 
@@ -1065,8 +1662,7 @@
         function showProfileUI() {
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('profile-section').classList.remove('hidden');
-            document.getElementById('player-name-input').value = userProfile.name;
-            document.getElementById('player-elo-display').innerText = Math.round(userProfile.elo);
+            updateGlobalUIHeaders();
         }
 
         document.getElementById('btn-google-signin').addEventListener('click', async () => {
@@ -1075,7 +1671,7 @@
                 await signInWithPopup(auth, googleProvider);
             } catch (error) {
                 console.warn("Google Sign-In caught error, falling back to Guest session:", error);
-                showToast("Domain restricted. Logging in as Guest...", true);
+                showToast("Logging in as Guest...", true);
                 if (!currentUser && isFirebaseInitialized) {
                     try {
                         await signInAnonymously(auth);
@@ -1108,7 +1704,7 @@
                 console.warn("Sign out error", error);
             }
             currentUser = null;
-            showScreen('home');
+            showScreen('landing');
             showLoginUI();
         });
 
@@ -1117,11 +1713,11 @@
                 if (user) {
                     currentUser = user;
                     await loadUserProfile();
-                    showScreen('home');
+                    showScreen('landing');
                     showProfileUI();
                 } else {
                     currentUser = null;
-                    showScreen('home');
+                    showScreen('landing');
                     showLoginUI();
                 }
             });
@@ -1137,36 +1733,55 @@
             try {
                 const snap = await getDoc(userRef);
                 if (snap.exists()) {
-                    userProfile = snap.data();
+                    const data = snap.data();
+                    userProfile = { ...userProfile, ...data };
+                    if (!userProfile.stats) userProfile.stats = getInitialStats();
                     if (currentUser.displayName && (userProfile.name.startsWith("Player-") || userProfile.name === "Player")) {
                         userProfile.name = currentUser.displayName;
                         await setDoc(userRef, { name: userProfile.name }, { merge: true });
                     }
                 } else {
                     let newName = currentUser.displayName || `Player-${Math.floor(Math.random()*1000)}`;
-                    userProfile = { name: newName, elo: 1200 };
+                    userProfile.name = newName;
+                    if (!userProfile.stats) userProfile.stats = getInitialStats();
                     await setDoc(userRef, userProfile);
                 }
+                saveUserProfile();
                 showProfileUI();
             } catch (e) {
-                console.warn("Firestore permissions restricted for user profile, using local state", e);
+                console.warn("Firestore profile sync notice, using active local session:", e);
                 showProfileUI();
             }
         }
 
+        // Navigation event listeners
+        document.getElementById('brand-logo-btn').addEventListener('click', () => showScreen('landing'));
+        document.getElementById('nav-landing-btn').addEventListener('click', () => showScreen('landing'));
+        document.getElementById('nav-profile-btn').addEventListener('click', () => showScreen('profile'));
+        document.getElementById('btn-landing-play-now').addEventListener('click', () => showScreen('home'));
+        document.getElementById('btn-landing-view-profile').addEventListener('click', () => showScreen('profile'));
+        document.getElementById('btn-home-back-landing').addEventListener('click', () => showScreen('landing'));
+        document.getElementById('home-avatar-btn').addEventListener('click', () => showScreen('profile'));
+        document.getElementById('btn-open-full-profile').addEventListener('click', () => showScreen('profile'));
+        document.getElementById('btn-profile-back-home').addEventListener('click', () => showScreen('home'));
+        document.getElementById('btn-results-view-profile').addEventListener('click', () => showScreen('profile'));
+        document.getElementById('btn-sync-cloud-bank').addEventListener('click', syncQuestionBankToFirestore);
+
+        document.getElementById('btn-reset-stats').addEventListener('click', async () => {
+            if (confirm("Reset your question stats and match records? Elo will remain.")) {
+                userProfile.stats = getInitialStats();
+                await saveUserProfile();
+                renderProfileDashboard();
+                showToast("Stats reset successfully.");
+            }
+        });
+
         document.getElementById('player-name-input').addEventListener('change', async (e) => {
             const newName = e.target.value.trim();
-            if(newName && currentUser) {
+            if(newName) {
                 userProfile.name = newName;
-                if (isFirebaseInitialized) {
-                    try {
-                        const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
-                        await setDoc(userRef, { name: newName }, { merge: true });
-                    } catch(err) {
-                        console.warn("Cloud save skipped, saved locally");
-                    }
-                }
-                showToast("Profile updated");
+                await saveUserProfile();
+                showToast("Name updated!");
             }
         });
 
@@ -1192,16 +1807,14 @@
                 const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
                 await setDoc(roomRef, initialData);
             } catch (e) {
-                console.warn("Firestore room create permission denied, running in local/fallback multiplayer mode", e);
+                console.warn("Firestore room create notice (running local session):", e);
             }
         }
 
         async function updateRoomInDB(roomId, updateData) {
             if (localMemoryRooms[roomId]) {
-                // Deep merge or update local memory
                 Object.keys(updateData).forEach(key => {
                     if (key.includes('.')) {
-                        // Handle nested updates like players.uid.score
                         const parts = key.split('.');
                         if (parts.length === 3 && parts[0] === 'players') {
                             if (!localMemoryRooms[roomId].players[parts[1]]) localMemoryRooms[roomId].players[parts[1]] = {};
@@ -1217,7 +1830,7 @@
                 const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
                 await updateDoc(roomRef, updateData);
             } catch (e) {
-                console.warn("Firestore room update permission restricted, using local sync state", e);
+                console.warn("Firestore room update notice:", e);
             }
         }
 
@@ -1229,7 +1842,7 @@
                 const snap = await getDoc(roomRef);
                 if (snap.exists()) return snap.data();
             } catch (e) {
-                console.warn("Firestore room get permission restricted", e);
+                console.warn("Firestore room get notice:", e);
             }
             return null;
         }
@@ -1251,8 +1864,9 @@
                 },
                 players: {
                     [currentUser.uid]: {
-                        name: userProfile.name,
-                        elo: userProfile.elo,
+                        name: userProfile.name || 'Player',
+                        avatar: userProfile.avatar || '🦊',
+                        elo: userProfile.elo || 1200,
                         score: 0,
                         finished: false
                     }
@@ -1260,46 +1874,42 @@
             };
 
             await createRoomInDB(roomId, initialData);
-            joinRoomLogic(roomId, true);
+            joinLobby(roomId, true);
         });
 
-        document.getElementById('btn-join-room').addEventListener('click', () => {
-            const code = document.getElementById('join-room-input').value.trim().toUpperCase();
-            if(code.length === 6) {
-                joinRoomLogic(code, false);
-            } else {
-                showToast("Invalid Room Code", true);
+        document.getElementById('btn-join-room').addEventListener('click', async () => {
+            const input = document.getElementById('join-room-input');
+            const roomId = input.value.trim().toUpperCase();
+            if (!roomId) {
+                showToast("Please enter a room code", true);
+                return;
             }
+            joinLobby(roomId, false);
         });
 
-        async function joinRoomLogic(roomId, asHost) {
-            if (!currentUser) return;
+        async function joinLobby(roomId, asHost) {
+            currentRoomId = roomId;
+            isHost = asHost;
             
             try {
                 const roomData = await getRoomFromDB(roomId);
-                if (!roomData && !asHost) {
-                    showToast("Room not found", true);
-                    return;
-                }
-                
-                if (roomData && roomData.status !== 'lobby' && !asHost) {
-                    showToast("Game already in progress", true);
+                if (!roomData) {
+                    showToast("Room not found!", true);
                     return;
                 }
 
                 if (!asHost) {
                     const updatedPlayers = roomData.players || {};
                     updatedPlayers[currentUser.uid] = {
-                        name: userProfile.name,
-                        elo: userProfile.elo,
+                        name: userProfile.name || 'Player',
+                        avatar: userProfile.avatar || '🦊',
+                        elo: userProfile.elo || 1200,
                         score: 0,
                         finished: false
                     };
                     await updateRoomInDB(roomId, { players: updatedPlayers });
                 }
 
-                currentRoomId = roomId;
-                isHost = asHost;
                 showScreen('lobby');
                 document.getElementById('lobby-code-display').innerText = roomId;
 
@@ -1310,57 +1920,100 @@
                 } else {
                     document.getElementById('btn-start-game').classList.add('hidden');
                     document.getElementById('lobby-waiting-msg').classList.remove('hidden');
-                    document.getElementById('settings-overlay').classList.add('hidden');
+                    document.getElementById('settings-overlay').classList.remove('hidden');
                 }
 
-                if (roomUnsubscribe) roomUnsubscribe();
-                
-                // Set up snapshot or polling sync
+                // Listen to room updates
                 if (isFirebaseInitialized) {
-                    try {
-                        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
-                        roomUnsubscribe = onSnapshot(roomRef, (snapshot) => {
-                            if(!snapshot.exists()) return;
-                            handleRoomUpdate(snapshot.data());
-                        }, (error) => {
-                            startPollingFallback(roomId);
-                        });
-                    } catch(e) {
-                        startPollingFallback(roomId);
-                    }
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+                    roomUnsubscribe = onSnapshot(roomRef, (snap) => {
+                        if (snap.exists()) {
+                            handleRoomUpdate(snap.data());
+                        } else {
+                            leaveRoom();
+                            showToast("Room has been closed by host.", true);
+                        }
+                    });
                 } else {
-                    startPollingFallback(roomId);
+                    handleRoomUpdate(localMemoryRooms[roomId]);
                 }
 
-            } catch(e) {
+            } catch (e) {
                 console.error("Join room error:", e);
                 showToast("Failed to join room", true);
             }
         }
 
-        let pollInterval = null;
-        function startPollingFallback(roomId) {
-            if (pollInterval) clearInterval(pollInterval);
-            pollInterval = setInterval(async () => {
-                const data = await getRoomFromDB(roomId);
-                if (data) handleRoomUpdate(data);
-            }, 1000);
+        function handleRoomUpdate(roomData) {
+            if (!roomData) return;
+
+            targetScore = (roomData.settings && roomData.settings.targetScore) ? roomData.settings.targetScore : 20;
+
+            // Render Player List
+            const playersList = document.getElementById('lobby-players-list');
+            playersList.innerHTML = '';
+            
+            const players = roomData.players || {};
+            Object.keys(players).forEach(uid => {
+                const p = players[uid];
+                const isPlayerHost = uid === roomData.hostId;
+                const isMe = uid === currentUser?.uid;
+                const pRank = getRankBadge(p.elo || 1200);
+
+                playersList.innerHTML += `
+                    <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-800/60 border ${isMe ? 'border-indigo-500/40 shadow' : 'border-slate-700/60'}">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">${p.avatar || '🦊'}</span>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-sm text-white ${isMe ? 'text-indigo-300' : ''}">${p.name}</span>
+                                    ${isPlayerHost ? '<span class="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded font-bold">HOST</span>' : ''}
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-mono">${p.elo || 1200} Elo • ${pRank.title}</span>
+                            </div>
+                        </div>
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span>
+                    </div>
+                `;
+            });
+
+            // If not host, sync settings visually
+            if (!isHost && roomData.settings) {
+                const topics = roomData.settings.topics || [];
+                document.querySelectorAll('.topic-cb').forEach(cb => {
+                    cb.checked = topics.includes(cb.value);
+                });
+                if (roomData.settings.targetScore) {
+                    document.getElementById('target-score-select').value = roomData.settings.targetScore;
+                }
+            }
+
+            // Status transitions
+            if (roomData.status === 'in_game') {
+                if (!isGameStarted) {
+                    startGame(roomData);
+                } else {
+                    updateGameProgress(roomData);
+                    checkWinCondition(roomData);
+                }
+            } else if (roomData.status === 'finished') {
+                finishGame(roomData);
+            }
         }
 
         async function leaveRoom() {
-            if(roomUnsubscribe) roomUnsubscribe();
-            if(pollInterval) clearInterval(pollInterval);
-            
+            if (roomUnsubscribe) {
+                roomUnsubscribe();
+                roomUnsubscribe = null;
+            }
             if (currentRoomId && currentUser) {
-                const roomData = await getRoomFromDB(currentRoomId);
-                if(roomData) {
-                    let players = roomData.players || {};
-                    delete players[currentUser.uid];
-                    if (isHost || Object.keys(players).length === 0) {
-                         await updateRoomInDB(currentRoomId, { status: 'closed' });
-                         delete localMemoryRooms[currentRoomId];
+                const room = await getRoomFromDB(currentRoomId);
+                if (room && room.players) {
+                    delete room.players[currentUser.uid];
+                    if (Object.keys(room.players).length === 0 || isHost) {
+                        delete localMemoryRooms[currentRoomId];
                     } else {
-                        await updateRoomInDB(currentRoomId, { players: players });
+                        await updateRoomInDB(currentRoomId, { players: room.players });
                     }
                 }
             }
@@ -1371,8 +2024,6 @@
         }
 
         document.getElementById('btn-leave-lobby').addEventListener('click', leaveRoom);
-        
-        // Also ensure any sign out or header return cleans up properly
         document.getElementById('btn-return-home').addEventListener('click', leaveRoom);
 
         document.querySelectorAll('.topic-cb').forEach(cb => {
@@ -1382,7 +2033,15 @@
 
         async function updateRoomSettings() {
             if(!isHost || !currentRoomId) return;
-            const topics = Array.from(document.querySelectorAll('.topic-cb:checked')).map(cb => cb.value);
+            let topics = Array.from(document.querySelectorAll('.topic-cb:checked')).map(cb => cb.value);
+            
+            // Bug 4 guard: Ensure at least one topic is selected
+            if (topics.length === 0) {
+                showToast("At least one topic is required. Resetting to all topics.", true);
+                document.querySelectorAll('.topic-cb').forEach(cb => cb.checked = true);
+                topics = Array.from(document.querySelectorAll('.topic-cb:checked')).map(cb => cb.value);
+            }
+
             const tScore = parseInt(document.getElementById('target-score-select').value);
             
             await updateRoomInDB(currentRoomId, {
@@ -1392,52 +2051,39 @@
         }
 
         // ---------------------------------------------------------
-        // GAME STATE MANAGEMENT
+        // GAME ENGINE & MULTI-STEP LOGIC
         // ---------------------------------------------------------
 
-        function handleRoomUpdate(roomData) {
+        document.getElementById('btn-start-game').addEventListener('click', async () => {
+            if (!isHost || !currentRoomId) return;
+            const roomData = await getRoomFromDB(currentRoomId);
             if (!roomData) return;
-            
-            targetScore = roomData.settings?.targetScore || 20;
 
-            if (roomData.status === 'lobby') {
-                updateLobbyUI(roomData);
-            } else if (roomData.status === 'playing' && !isGameStarted) {
-                startGame(roomData);
-            } else if (roomData.status === 'playing' && isGameStarted) {
-                updateGameProgress(roomData);
-                checkWinCondition(roomData);
-            } else if (roomData.status === 'finished') {
-                showResults(roomData);
+            let topics = roomData.settings?.topics || [];
+            if (!topics || topics.length === 0) {
+                topics = ALL_WACE_TOPICS;
             }
-        }
 
-        function updateLobbyUI(roomData) {
-            const list = document.getElementById('lobby-players-list');
-            list.innerHTML = '';
-            const players = roomData.players || {};
-            
-            Object.keys(players).forEach(uid => {
-                const p = players[uid];
-                const isMe = uid === currentUser?.uid;
-                const isHostPlayer = uid === roomData.hostId;
-                
-                list.innerHTML += `
-                    <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 flex justify-between items-center shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <div class="w-2 h-2 rounded-full ${isMe ? 'bg-green-400' : 'bg-slate-500'}"></div>
-                            <span class="font-bold text-white">${p.name} ${isHostPlayer ? '👑' : ''}</span>
-                        </div>
-                        <span class="text-xs text-purple-400 font-bold">Elo: ${Math.round(p.elo)}</span>
-                    </div>
-                `;
+            // Generate Match Set using robust deduplicated generator pool
+            matchQuestions = qdb.generateMatchSet(topics, 50);
+
+            await updateRoomInDB(currentRoomId, {
+                status: 'in_game',
+                questions: matchQuestions
             });
-        }
+
+            if (!isFirebaseInitialized) {
+                localMemoryRooms[currentRoomId].status = 'in_game';
+                localMemoryRooms[currentRoomId].questions = matchQuestions;
+                handleRoomUpdate(localMemoryRooms[currentRoomId]);
+            }
+        });
 
         function startGame(roomData) {
             isGameStarted = true;
             matchQuestions = roomData.questions || [];
             currentQuestionIndex = 0;
+            currentMultiStepIndex = 0;
             localScore = 0;
             document.getElementById('game-local-score').innerText = '0';
             
@@ -1445,17 +2091,16 @@
             updateGameProgress(roomData);
             
             const overlay = document.getElementById('game-countdown-overlay');
-            const num = document.getElementById('game-countdown-number');
             overlay.classList.remove('hidden');
-            
             let count = 3;
-            num.innerText = count;
-            const iv = setInterval(() => {
+            document.getElementById('game-countdown-number').innerText = count;
+            
+            const timer = setInterval(() => {
                 count--;
-                if(count > 0) {
-                    num.innerText = count;
+                if (count > 0) {
+                    document.getElementById('game-countdown-number').innerText = count;
                 } else {
-                    clearInterval(iv);
+                    clearInterval(timer);
                     overlay.classList.add('hidden');
                     renderQuestion();
                 }
@@ -1467,21 +2112,25 @@
             container.innerHTML = '';
             
             const players = roomData.players || {};
-            const sortedUIDs = Object.keys(players).sort((a,b) => players[b].score - players[a].score);
+            const sortedUIDs = Object.keys(players).sort((a,b) => (players[b].score || 0) - (players[a].score || 0));
             
             sortedUIDs.forEach(uid => {
                 const p = players[uid];
-                const pct = Math.min(100, Math.max(0, (p.score / targetScore) * 100));
+                const pScore = p.score || 0;
+                const pct = Math.min(100, Math.max(0, (pScore / targetScore) * 100));
                 const isMe = uid === currentUser?.uid;
                 
                 container.innerHTML += `
                     <div class="flex flex-col gap-1 w-full">
                         <div class="flex justify-between items-center text-xs font-bold">
-                            <span class="${isMe ? 'text-indigo-300' : 'text-slate-400'}">${p.name}</span>
-                            <span class="text-slate-300">${p.score} / ${targetScore}</span>
+                            <span class="${isMe ? 'text-indigo-300' : 'text-slate-400'} flex items-center gap-1.5">
+                                <span>${p.avatar || '🦊'}</span>
+                                <span>${p.name}</span>
+                            </span>
+                            <span class="text-slate-300 font-mono">${pScore} / ${targetScore}</span>
                         </div>
-                        <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden border border-slate-700">
-                            <div class="progress-bar-fill h-full ${isMe ? 'bg-gradient-to-r from-indigo-500 to-purple-500' : 'bg-slate-500'} ${p.score >= targetScore ? 'animate-pulse' : ''}" style="width: ${pct}%"></div>
+                        <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                            <div class="progress-bar-fill h-full ${isMe ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-sky-400' : 'bg-slate-600'} ${pScore >= targetScore ? 'animate-pulse' : ''}" style="width: ${pct}%"></div>
                         </div>
                     </div>
                 `;
@@ -1490,36 +2139,60 @@
 
         function checkWinCondition(roomData) {
             const players = roomData.players || {};
-            const isSomeoneFinished = Object.values(players).some(p => p.score >= targetScore);
+            const isSomeoneFinished = Object.values(players).some(p => (p.score || 0) >= targetScore);
             
             if (isSomeoneFinished && isHost && roomData.status !== 'finished') {
                 updateRoomInDB(currentRoomId, { status: 'finished' });
             }
         }
 
-        function showResults(roomData) {
+        async function finishGame(roomData) {
+            isGameStarted = false;
             showScreen('results');
             const container = document.getElementById('results-leaderboard');
             container.innerHTML = '';
             
             const players = roomData.players || {};
-            const sortedUIDs = Object.keys(players).sort((a,b) => players[b].score - players[a].score);
+            const sortedUIDs = Object.keys(players).sort((a,b) => (players[b].score || 0) - (players[a].score || 0));
             
+            const isWinner = sortedUIDs[0] === currentUser?.uid;
+            
+            // Record match result stats
+            if (!userProfile.stats) userProfile.stats = getInitialStats();
+            userProfile.stats.matchesPlayed = (userProfile.stats.matchesPlayed || 0) + 1;
+            
+            if (isWinner) {
+                userProfile.stats.wins = (userProfile.stats.wins || 0) + 1;
+                userProfile.elo = (userProfile.elo || 1200) + 25;
+            } else {
+                userProfile.stats.losses = (userProfile.stats.losses || 0) + 1;
+                userProfile.elo = Math.max(800, (userProfile.elo || 1200) - 15);
+            }
+            
+            await saveUserProfile();
+
             let rank = 1;
             sortedUIDs.forEach(uid => {
                 const p = players[uid];
                 const isMe = uid === currentUser?.uid;
-                
+                const medal = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : `#${rank}`));
+                const eloChange = rank === 1 ? '+25' : '-15';
+
                 container.innerHTML += `
-                    <div class="bg-slate-800/80 p-4 rounded-2xl border ${isMe ? 'border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]' : 'border-slate-700'} flex items-center gap-4">
-                        <div class="w-8 text-center text-xl font-bold ${rank === 1 ? 'text-yellow-400' : 'text-slate-400'}">
-                            ${rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}
+                    <div class="flex items-center justify-between p-4 rounded-2xl ${rank === 1 ? 'bg-amber-500/10 border border-amber-500/40' : 'bg-slate-800/60 border border-slate-700'} ${isMe ? 'ring-2 ring-indigo-500' : ''}">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl font-bold font-mono">${medal}</span>
+                            <span class="text-2xl">${p.avatar || '🦊'}</span>
+                            <div class="text-left">
+                                <div class="font-bold text-sm text-white flex items-center gap-2">
+                                    <span>${p.name}</span>
+                                    ${isMe ? '<span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded font-bold">YOU</span>' : ''}
+                                </div>
+                                <span class="text-[11px] text-slate-400 font-mono">${p.score || 0} pts • ${rank === 1 ? 'Winner' : 'Runner-up'}</span>
+                            </div>
                         </div>
-                        <div class="flex-1 font-bold text-lg text-white">
-                            ${p.name}
-                        </div>
-                        <div class="text-indigo-300 font-bold text-xl">
-                            ${p.score} pts
+                        <div class="text-right font-mono">
+                            <span class="text-sm font-bold ${rank === 1 ? 'text-emerald-400' : 'text-slate-400'}">${eloChange} Elo</span>
                         </div>
                     </div>
                 `;
@@ -1527,86 +2200,61 @@
             });
         }
 
-        document.getElementById('btn-start-game').addEventListener('click', async () => {
-            if(!isHost || !currentRoomId) return;
-            const roomData = await getRoomFromDB(currentRoomId);
-            
-            // Generate a set of questions for everyone based on settings
-            matchQuestions = qdb.generateMatchSet(roomData.settings.topics, 50);
-            
-            await updateRoomInDB(currentRoomId, {
-                status: 'playing',
-                questions: matchQuestions,
-                startTime: Date.now()
-            });
-        });
-
         // ---------------------------------------------------------
-        // GAMEPLAY & WORKING OUT SCRATCHPAD ENGINE
+        // SCRATCHPAD WORKING OUT MODULE
         // ---------------------------------------------------------
-        let currentMultiStepIndex = 0;
-        let scratchpadCtx = null;
+        let scratchpadCtx, canvas;
         let isScratchpadDrawing = false;
-        let scratchpadUndoStack = [];
         let scratchpadColor = '#ffffff';
         let scratchpadSize = 4;
         let isEraserMode = false;
+        let scratchpadUndoStack = [];
 
         function initScratchpad() {
-            const canvas = document.getElementById('scratchpad-canvas');
-            if (!canvas) return;
-            scratchpadCtx = canvas.getContext('2d');
+            canvas = document.getElementById('scratchpad-canvas');
+            if(!canvas) return;
+            scratchpadCtx = canvas.getContext('2d', { willReadFrequently: true });
 
             function resizeCanvas() {
-                const container = document.getElementById('scratchpad-canvas-container');
-                if (!container || container.clientWidth === 0) return;
+                const rect = canvas.getBoundingClientRect();
+                if (rect.width === 0 || rect.height === 0) return;
                 
-                // Store existing image data to preserve drawings during resize
-                let tempImageData = null;
-                if (canvas.width > 0 && canvas.height > 0) {
-                    tempImageData = scratchpadCtx.getImageData(0, 0, canvas.width, canvas.height);
-                }
-
-                const rect = container.getBoundingClientRect();
-                const dpr = window.devicePixelRatio || 1;
-                canvas.width = rect.width * dpr;
-                canvas.height = rect.height * dpr;
-                scratchpadCtx.scale(dpr, dpr);
-                
+                const temp = scratchpadCtx.getImageData(0, 0, canvas.width, canvas.height);
+                canvas.width = rect.width * window.devicePixelRatio;
+                canvas.height = rect.height * window.devicePixelRatio;
+                scratchpadCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
                 scratchpadCtx.lineCap = 'round';
                 scratchpadCtx.lineJoin = 'round';
-
-                if (tempImageData) {
-                    scratchpadCtx.putImageData(tempImageData, 0, 0);
-                }
+                try {
+                    scratchpadCtx.putImageData(temp, 0, 0);
+                } catch(e) {}
             }
 
             window.addEventListener('resize', resizeCanvas);
-            
-            // Toggle scratchpad visibility
+
             document.getElementById('btn-toggle-scratchpad').addEventListener('click', () => {
                 const panel = document.getElementById('scratchpad-panel');
-                const modeToggle = document.getElementById('scratchpad-mode-toggle');
+                const modes = document.getElementById('scratchpad-mode-toggle');
                 const isHidden = panel.classList.contains('hidden');
                 
                 if (isHidden) {
                     panel.classList.remove('hidden');
-                    modeToggle.classList.remove('hidden');
+                    modes.classList.remove('hidden');
+                    document.getElementById('scratchpad-toggle-icon').innerText = '🔼';
                     setTimeout(resizeCanvas, 50);
                 } else {
                     panel.classList.add('hidden');
-                    modeToggle.classList.add('hidden');
+                    modes.classList.add('hidden');
+                    document.getElementById('scratchpad-toggle-icon').innerText = '✏️';
                 }
             });
 
-            // Mode switching: Draw vs Text
             document.getElementById('sp-mode-draw').addEventListener('click', () => {
+                document.getElementById('scratchpad-text-container').classList.add('hidden');
                 document.getElementById('scratchpad-canvas-container').classList.remove('hidden');
                 document.getElementById('scratchpad-draw-controls').classList.remove('hidden');
-                document.getElementById('scratchpad-text-container').classList.add('hidden');
-                document.getElementById('scratchpad-text-container').classList.remove('flex');
-                document.getElementById('sp-mode-draw').className = "px-2.5 py-1 rounded-md font-bold bg-indigo-600 text-white transition-colors";
-                document.getElementById('sp-mode-text').className = "px-2.5 py-1 rounded-md font-bold text-slate-400 hover:text-white transition-colors";
+                document.getElementById('sp-mode-draw').className = "px-2.5 py-0.5 rounded-md font-bold bg-indigo-600 text-white transition-colors";
+                document.getElementById('sp-mode-text').className = "px-2.5 py-0.5 rounded-md font-bold text-slate-400 hover:text-white transition-colors";
                 setTimeout(resizeCanvas, 50);
             });
 
@@ -1615,11 +2263,10 @@
                 document.getElementById('scratchpad-draw-controls').classList.add('hidden');
                 document.getElementById('scratchpad-text-container').classList.remove('hidden');
                 document.getElementById('scratchpad-text-container').classList.add('flex');
-                document.getElementById('sp-mode-text').className = "px-2.5 py-1 rounded-md font-bold bg-indigo-600 text-white transition-colors";
-                document.getElementById('sp-mode-draw').className = "px-2.5 py-1 rounded-md font-bold text-slate-400 hover:text-white transition-colors";
+                document.getElementById('sp-mode-text').className = "px-2.5 py-0.5 rounded-md font-bold bg-indigo-600 text-white transition-colors";
+                document.getElementById('sp-mode-draw').className = "px-2.5 py-0.5 rounded-md font-bold text-slate-400 hover:text-white transition-colors";
             });
 
-            // Drawing Toolbar Event Listeners
             document.querySelectorAll('.sp-color-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const color = btn.getAttribute('data-color');
@@ -1639,13 +2286,12 @@
                 btn.addEventListener('click', () => {
                     scratchpadSize = parseInt(btn.getAttribute('data-size'));
                     document.querySelectorAll('.sp-size-btn').forEach(b => {
-                        b.className = "sp-size-btn px-2 py-1 rounded bg-slate-800 text-slate-200 font-bold border border-slate-700 hover:bg-slate-700";
+                        b.className = "sp-size-btn px-2 py-0.5 rounded bg-slate-800 text-slate-200 text-xs font-bold border border-slate-700 hover:bg-slate-700";
                     });
-                    btn.className = "sp-size-btn px-2 py-1 rounded bg-indigo-600 text-white font-bold border border-indigo-500";
+                    btn.className = "sp-size-btn px-2 py-0.5 rounded bg-indigo-600 text-white text-xs font-bold border border-indigo-500";
                 });
             });
 
-            // Save undo state before drawing stroke
             function saveState() {
                 if (scratchpadUndoStack.length > 15) scratchpadUndoStack.shift();
                 scratchpadUndoStack.push(scratchpadCtx.getImageData(0, 0, canvas.width, canvas.height));
@@ -1663,7 +2309,6 @@
                 scratchpadCtx.clearRect(0, 0, canvas.width, canvas.height);
             });
 
-            // Stylus Pointer Events (supporting pressure & touch)
             function getPos(e) {
                 const rect = canvas.getBoundingClientRect();
                 return {
@@ -1690,7 +2335,6 @@
                     scratchpadCtx.lineWidth = scratchpadSize * 4;
                 } else {
                     scratchpadCtx.globalCompositeOperation = 'source-over';
-                    // Dynamic line width based on pressure if available
                     const pressure = e.pressure && e.pressure > 0 ? e.pressure : 0.5;
                     scratchpadCtx.lineWidth = scratchpadSize * (0.4 + pressure * 1.2);
                 }
@@ -1703,19 +2347,15 @@
             canvas.addEventListener('pointerup', stopDraw);
             canvas.addEventListener('pointercancel', stopDraw);
 
-            // Live MathJax Preview for Textarea
             let mathjaxTimeout;
             document.getElementById('scratchpad-textarea').addEventListener('input', (e) => {
                 const val = e.target.value;
                 const preview = document.getElementById('scratchpad-latex-preview');
                 if (val.trim() === '') {
-                    preview.innerHTML = '<span class="text-slate-500 italic text-xs">Live LaTeX preview will appear here...</span>';
+                    preview.innerHTML = '<span class="text-slate-500 italic text-[11px]">Live LaTeX preview...</span>';
                     return;
                 }
-                
-                // Format slightly to respect typical text line breaks
-                preview.innerHTML = val.replace(/\n/g, '<br>');
-                
+                preview.innerHTML = val.replace(/\\n/g, '<br>');
                 clearTimeout(mathjaxTimeout);
                 mathjaxTimeout = setTimeout(() => {
                     if (window.MathJax && window.MathJax.typesetPromise) {
@@ -1725,14 +2365,17 @@
             });
         }
 
+        // ---------------------------------------------------------
+        // QUESTION ANSWERING & BUG 1 FIX (CRASH PROTECTION)
+        // ---------------------------------------------------------
+
         function isAnswerMatching(userInput, acceptableAnswers) {
             if (!userInput || !acceptableAnswers) return false;
-            const normUser = userInput.trim().toLowerCase().replace(/\s+/g, '').replace(/[\$\(\)]/g, '');
+            const normUser = userInput.trim().toLowerCase().replace(/\\s+/g, '').replace(/[\\$\\(\\)]/g, '');
             return acceptableAnswers.some(ans => {
-                const normAns = String(ans).trim().toLowerCase().replace(/\s+/g, '').replace(/[\$\(\)]/g, '');
+                const normAns = String(ans).trim().toLowerCase().replace(/\\s+/g, '').replace(/[\\$\\(\\)]/g, '');
                 if (normUser === normAns) return true;
                 
-                // Float numerical equivalence check
                 const numUser = parseFloat(normUser);
                 const numAns = parseFloat(normAns);
                 if (!isNaN(numUser) && !isNaN(numAns) && Math.abs(numUser - numAns) < 1e-4) return true;
@@ -1742,7 +2385,7 @@
 
         function renderQuestion() {
             if (currentQuestionIndex >= matchQuestions.length) {
-                document.getElementById('game-question-text').innerHTML = "Waiting for other players...";
+                document.getElementById('game-question-text').innerHTML = "All match questions completed! Waiting for final scoring...";
                 document.getElementById('game-visual-container').innerHTML = '';
                 document.getElementById('game-options-grid').innerHTML = '';
                 document.getElementById('game-short-answer-container').classList.add('hidden');
@@ -1758,14 +2401,18 @@
             const mcqGrid = document.getElementById('game-options-grid');
             const shortAnsContainer = document.getElementById('game-short-answer-container');
 
-            // Handle multi-step questions
-            if (q.type === 'multi_step') {
-                badge.innerText = "Multi-Step";
+            // CRITICAL BUG 1 GUARD: Safe Multi-step index boundary verification
+            if (q.type === 'multi_step' && Array.isArray(q.steps)) {
+                if (!q.steps[currentMultiStepIndex]) {
+                    currentMultiStepIndex = 0;
+                }
+
+                badge.innerText = "Multi-Step Problem";
                 multiProgress.classList.remove('hidden');
                 
                 const activeStep = q.steps[currentMultiStepIndex];
                 document.getElementById('multistep-step-label').innerText = `Step ${currentMultiStepIndex + 1} of ${q.steps.length}`;
-                document.getElementById('multistep-step-title').innerText = activeStep.prompt.replace(/<[^>]*>?/gm, '');
+                document.getElementById('multistep-step-title').innerText = activeStep.prompt ? activeStep.prompt.replace(/<[^>]*>?/gm, '') : 'Solve step';
                 
                 const pct = Math.round(((currentMultiStepIndex + 1) / q.steps.length) * 100);
                 document.getElementById('multistep-bar-fill').style.width = `${pct}%`;
@@ -1828,7 +2475,7 @@
             if (visual) {
                 container.classList.remove('hidden');
                 container.innerHTML = `
-                    <div class="p-6 bg-slate-900/90 rounded-2xl border border-indigo-500/40 w-full shadow-lg flex flex-col items-center justify-center">
+                    <div class="p-4 bg-slate-950/80 rounded-2xl border border-indigo-500/30 w-full shadow-lg flex flex-col items-center justify-center">
                         ${visual}
                     </div>
                 `;
@@ -1842,9 +2489,11 @@
             const grid = document.getElementById('game-options-grid');
             grid.innerHTML = '';
             
+            if (!options || !Array.isArray(options)) return;
+
             options.forEach((opt, idx) => {
                 const btn = document.createElement('button');
-                btn.className = "bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 hover:border-indigo-500/50 p-6 rounded-2xl font-bold text-lg text-white transition-all transform hover:-translate-y-1 shadow-lg text-center flex items-center justify-center min-h-[90px]";
+                btn.className = "bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 hover:border-indigo-500/50 p-5 rounded-2xl font-bold text-sm text-white transition-all transform hover:-translate-y-0.5 shadow-lg text-center flex items-center justify-center min-h-[75px]";
                 btn.innerHTML = opt;
                 btn.onclick = () => handleStepOrMCQSubmission(idx === ansIndex, btn);
                 grid.appendChild(btn);
@@ -1859,9 +2508,10 @@
         function submitShortAnswer() {
             const inputVal = document.getElementById('short-answer-input').value;
             const q = matchQuestions[currentQuestionIndex];
+            if (!q) return;
             
             let targetAnswers = [];
-            if (q.type === 'multi_step') {
+            if (q.type === 'multi_step' && q.steps && q.steps[currentMultiStepIndex]) {
                 targetAnswers = q.steps[currentMultiStepIndex].acceptableAnswers;
             } else {
                 targetAnswers = q.acceptableAnswers;
@@ -1876,15 +2526,30 @@
             isAnswerCooldown = true;
 
             const q = matchQuestions[currentQuestionIndex];
+            if (!q) return;
+
+            // Track stats live in user profile
+            if (!userProfile.stats) userProfile.stats = getInitialStats();
+            userProfile.stats.totalAnswered = (userProfile.stats.totalAnswered || 0) + 1;
+            
+            if (!userProfile.stats.topicStats) userProfile.stats.topicStats = {};
+            if (!userProfile.stats.topicStats[q.topic]) {
+                userProfile.stats.topicStats[q.topic] = { answered: 0, correct: 0 };
+            }
+            userProfile.stats.topicStats[q.topic].answered = (userProfile.stats.topicStats[q.topic].answered || 0) + 1;
 
             if (isCorrect) {
-                showToast("Correct Step!");
-                if (q.type === 'multi_step' && currentMultiStepIndex < q.steps.length - 1) {
+                userProfile.stats.totalCorrect = (userProfile.stats.totalCorrect || 0) + 1;
+                userProfile.stats.topicStats[q.topic].correct = (userProfile.stats.topicStats[q.topic].correct || 0) + 1;
+                
+                showToast("Correct Answer!");
+                
+                if (q.type === 'multi_step' && q.steps && currentMultiStepIndex < q.steps.length - 1) {
                     currentMultiStepIndex++;
                     setTimeout(() => {
                         isAnswerCooldown = false;
                         renderQuestion();
-                    }, 800);
+                    }, 600);
                     return;
                 }
 
@@ -1893,9 +2558,11 @@
                 currentMultiStepIndex = 0;
             } else {
                 showToast("Incorrect Answer", true);
+                // CRITICAL BUG 1 FIX: Reset multi-step index to 0 when transitioning away on wrong answer
+                currentMultiStepIndex = 0;
             }
 
-            // Sync updated player score to DB
+            // Sync score to Room DB
             if (currentRoomId && currentUser) {
                 await updateRoomInDB(currentRoomId, {
                     [`players.${currentUser.uid}.score`]: localScore
@@ -1904,9 +2571,11 @@
 
             setTimeout(() => {
                 isAnswerCooldown = false;
+                currentMultiStepIndex = 0;
                 currentQuestionIndex++;
+                
                 if (localScore >= targetScore) {
-                    document.getElementById('game-question-text').innerHTML = "Goal Reached! Waiting for match completion...";
+                    document.getElementById('game-question-text').innerHTML = "Goal Reached! Calculating final rankings...";
                     document.getElementById('game-options-grid').innerHTML = '';
                     document.getElementById('game-short-answer-container').classList.add('hidden');
                     document.getElementById('game-visual-container').innerHTML = '';
@@ -1914,7 +2583,7 @@
                 } else {
                     renderQuestion();
                 }
-            }, 1200);
+            }, 1000);
         }
 
         // Initialize scratchpad canvas on script execution
