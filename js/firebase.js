@@ -59,7 +59,7 @@ export function initFirebase() {
 initFirebase();
 
 // ---------------------------------------------------------
-// AUTHENTICATION PROVIDERS FOR FIRST LAUNCH
+// AUTHENTICATION PROVIDERS (ANONYMOUS, EMAIL, GOOGLE)
 // ---------------------------------------------------------
 
 /**
@@ -139,7 +139,7 @@ export function loadSavedProfile() {
             return parsed;
         } catch(e) {}
     }
-    return null; // Return null if no authenticated session exists on first launch
+    return null;
 }
 
 export function saveLocalProfile(profile) {
@@ -150,8 +150,8 @@ export function clearLocalProfile() {
     localStorage.removeItem(LOCAL_STORAGE_KEY_PROFILE);
 }
 
-export async function syncUserProfileWithFirestore(user, customName = null, isGuest = false) {
-    if (!db || isGuest || !user) return;
+export async function syncUserProfileWithFirestore(user, customName = null) {
+    if (!db || !user) return;
     try {
         const userRef = doc(db, 'users', user.uid);
         const snap = await getDoc(userRef);
@@ -173,8 +173,29 @@ export async function syncUserProfileWithFirestore(user, customName = null, isGu
     }
 }
 
+export async function syncQuestionsToFirestore(questionsArray, userProfile) {
+    if (!db) throw new Error("Firestore database is unavailable.");
+    const promises = [];
+    for (let i = 0; i < questionsArray.length; i++) {
+        promises.push(setDoc(doc(db, 'questions', `static_q_${i}`), {
+            ...questionsArray[i],
+            updatedAt: serverTimestamp()
+        }));
+    }
+    if (userProfile && userProfile.uid) {
+        promises.push(setDoc(doc(db, 'users', userProfile.uid), {
+            displayName: userProfile.displayName,
+            avatar: userProfile.avatar,
+            elo: userProfile.elo,
+            stats: userProfile.stats,
+            updatedAt: serverTimestamp()
+        }, { merge: true }));
+    }
+    await Promise.all(promises);
+}
+
 // ---------------------------------------------------------
-// CLOUD FIRESTORE MULTIPLAYER ROOMS (NO LOCAL FALLBACK)
+// CLOUD FIRESTORE MULTIPLAYER ROOMS
 // ---------------------------------------------------------
 export async function saveRoomToDB(roomId, data) {
     if (!db) throw new Error("Firestore database is unavailable.");

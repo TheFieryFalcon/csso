@@ -5,9 +5,9 @@ import {
     loadSavedProfile, saveLocalProfile, clearLocalProfile, getInitialStats,
     isFirebaseAvailable, auth, db,
     authSignInAnonymous, authSignInEmail, authSignInGoogle, authSignOut,
-    syncUserProfileWithFirestore,
+    syncUserProfileWithFirestore, syncQuestionsToFirestore,
     saveRoomToDB, getRoomFromDB, getPublicRoomsFromDB, updateRoomInDB, subscribeToRoom,
-    resolveProofQueryInRoom, doc, getDoc
+    resolveProofQueryInRoom, doc, setDoc, getDoc, updateDoc, serverTimestamp
 } from './firebase.js';
 import { questionDB } from './questions/questionDB.js';
 import { GameEngine } from './game.js';
@@ -25,13 +25,11 @@ const state = {
         displayName: 'Mathlete',
         avatar: '🧮',
         elo: 1200,
-        isGuest: false,
         stats: getInitialStats()
     },
     currentUser: savedProfile ? {
         uid: savedProfile.uid,
-        displayName: savedProfile.displayName,
-        isGuest: Boolean(savedProfile.isGuest)
+        displayName: savedProfile.displayName
     } : null,
     currentRoomId: null,
     roomUnsubscribe: null,
@@ -51,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupLobbyControls();
     setupAuthHandlers();
 
-    if (savedProfile && state.currentUser) {
+    if (savedProfile && state.currentUser && state.currentUser.uid) {
         updateNavbarProfileBadge(state.userProfile);
         updateCloudStatusBadge();
         showScreen('landing');
@@ -87,7 +85,7 @@ function updateRoomNavLeaveButton() {
 }
 
 // ---------------------------------------------------------
-// FIRST-LAUNCH AUTHENTICATION HANDLERS (4 MODES)
+// FIRST-LAUNCH AUTHENTICATION HANDLERS (ANONYMOUS, GOOGLE, EMAIL)
 // ---------------------------------------------------------
 function setupAuthHandlers() {
     let isEmailRegisterMode = false;
@@ -111,13 +109,12 @@ function setupAuthHandlers() {
         try {
             showToast("Connecting to specrush cloud...");
             const user = await authSignInAnonymous();
-            completeAuthentication({
+            await completeAuthentication({
                 uid: user.uid,
                 displayName: `Mathlete_${user.uid.slice(-4).toUpperCase()}`,
-                email: null,
-                isGuest: false
+                email: null
             });
-            showToast("✅ Connected anonymously!");
+            showToast("✅ Connected anonymously to specrush!");
         } catch (err) {
             console.error("Anonymous auth error:", err);
             showToast("Auth note: " + (err.message || "Failed to authenticate"), true);
@@ -129,17 +126,16 @@ function setupAuthHandlers() {
         try {
             showToast("Authenticating with Google...");
             const user = await authSignInGoogle();
-            completeAuthentication({
+            await completeAuthentication({
                 uid: user.uid,
                 displayName: user.displayName || 'Google Mathlete',
-                email: user.email,
-                isGuest: false
+                email: user.email
             });
             showToast(`Welcome, ${user.displayName || 'Mathlete'}!`);
         } catch (err) {
             console.error("Google Auth error:", err);
             if (err.code === 'auth/unauthorized-domain') {
-                showToast("Domain not yet authorized in Firebase Console. You can use Anonymous or Guest mode!", true);
+                showToast("Domain not yet authorized in Firebase Console. Please use Anonymous or Email sign-in.", true);
             } else if (err.code === 'auth/popup-blocked') {
                 showToast("Popup blocked by browser. Please allow popups.", true);
             } else {
@@ -158,31 +154,16 @@ function setupAuthHandlers() {
         try {
             showToast(isEmailRegisterMode ? "Creating account..." : "Signing in...");
             const user = await authSignInEmail(email, password, isEmailRegisterMode);
-            completeAuthentication({
+            await completeAuthentication({
                 uid: user.uid,
                 displayName: email.split('@')[0],
-                email: email,
-                isGuest: false
+                email: email
             });
             showToast(isEmailRegisterMode ? "Account created successfully!" : "Signed in successfully!");
         } catch (err) {
             console.error("Email auth error:", err);
             showToast("Email Auth: " + (err.message || "Authentication failed"), true);
         }
-    });
-
-    // 4. Guest Mode
-    document.getElementById('form-guest-login')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const name = document.getElementById('input-guest-name')?.value.trim() || 'Guest Mathlete';
-        const guestUid = 'guest_' + Math.random().toString(36).substr(2, 9);
-        completeAuthentication({
-            uid: guestUid,
-            displayName: name,
-            email: null,
-            isGuest: true
-        });
-        showToast(`Playing as ${name} (Guest)`);
     });
 
     // Sign Out Handler
@@ -194,7 +175,6 @@ function setupAuthHandlers() {
             displayName: 'Sign In',
             avatar: '🧮',
             elo: 1200,
-            isGuest: false,
             stats: getInitialStats()
         };
         updateNavbarProfileBadge(state.userProfile);
@@ -210,14 +190,13 @@ async function completeAuthentication(userObj) {
         displayName: userObj.displayName,
         avatar: '🧮',
         elo: 1200,
-        isGuest: userObj.isGuest,
         stats: getInitialStats()
     };
 
-    // Sync / Load existing statistics from Firestore if available
-    if (db && !userObj.isGuest) {
+    // Sync and load statistics from Firestore
+    if (db && userObj.uid) {
         try {
-            await syncUserProfileWithFirestore(userObj, userObj.displayName, userObj.isGuest);
+            await syncUserProfileWithFirestore(userObj, userObj.displayName);
             const userDoc = await getDoc(doc(db, 'users', userObj.uid));
             if (userDoc.exists()) {
                 const data = userDoc.data();
@@ -239,15 +218,15 @@ async function completeAuthentication(userObj) {
 
 // Top Navigation
 document.getElementById('nav-brand-logo')?.addEventListener('click', () => {
-    if (state.currentUser) showScreen('landing');
+    if (state.currentUser?.uid) showScreen('landing');
     else showScreen('login');
 });
 document.getElementById('nav-btn-landing')?.addEventListener('click', () => {
-    if (state.currentUser) showScreen('landing');
+    if (state.currentUser?.uid) showScreen('landing');
     else showScreen('login');
 });
 document.getElementById('nav-btn-lobby')?.addEventListener('click', () => {
-    if (state.currentUser) {
+    if (state.currentUser?.uid) {
         showScreen('lobby');
         loadPublicRooms();
     } else {
@@ -255,7 +234,7 @@ document.getElementById('nav-btn-lobby')?.addEventListener('click', () => {
     }
 });
 document.getElementById('nav-btn-profile')?.addEventListener('click', () => {
-    if (state.currentUser) {
+    if (state.currentUser?.uid) {
         renderProfileDashboard(state.userProfile, state.currentUser);
         showScreen('profile');
     } else {
@@ -266,7 +245,7 @@ document.getElementById('nav-btn-leave-room')?.addEventListener('click', exitCur
 
 // Landing Page Hero CTA
 document.getElementById('landing-btn-start-playing')?.addEventListener('click', () => {
-    if (state.currentUser) {
+    if (state.currentUser?.uid) {
         showScreen('lobby');
         loadPublicRooms();
     } else {
@@ -274,7 +253,7 @@ document.getElementById('landing-btn-start-playing')?.addEventListener('click', 
     }
 });
 document.getElementById('landing-btn-view-profile')?.addEventListener('click', () => {
-    if (state.currentUser) {
+    if (state.currentUser?.uid) {
         renderProfileDashboard(state.userProfile, state.currentUser);
         showScreen('profile');
     } else {
@@ -317,7 +296,7 @@ function setupAvatarPicker() {
             document.getElementById('avatar-picker-container')?.classList.add('hidden');
             showToast(`Avatar updated to ${emoji}`);
             
-            if (db && state.currentUser && !state.currentUser.isGuest) {
+            if (db && state.currentUser?.uid) {
                 try {
                     await updateDoc(doc(db, 'users', state.currentUser.uid), { avatar: emoji });
                 } catch(e) {}
@@ -368,7 +347,7 @@ function setupLobbyControls() {
     // Create Room
     document.getElementById('btn-create-room')?.addEventListener('click', async () => {
         if (!state.currentUser || !state.currentUser.uid) {
-            showToast("Please sign in or select guest mode to create a room.", true);
+            showToast("Please sign in to create a room.", true);
             showScreen('login');
             return;
         }
@@ -513,35 +492,19 @@ function setupLobbyControls() {
     document.getElementById('btn-leave-room-top')?.addEventListener('click', exitCurrentRoom);
     document.getElementById('btn-game-leave')?.addEventListener('click', exitCurrentRoom);
 
-    // Cloud Sync Button in Header
+    // Cloud Sync Button in Header (with setDoc properly bound)
     document.getElementById('nav-btn-sync-cloud')?.addEventListener('click', async () => {
         if (!db) {
-            showToast("Firestore is unavailable.", true);
+            showToast("Firestore database is unavailable.", true);
             return;
         }
         try {
-            showToast("Syncing question bank to Firestore (specrush)...");
-            const staticSet = questionDB.staticQuestions;
-            const promises = [];
-            for (let i = 0; i < staticSet.length; i++) {
-                promises.push(setDoc(doc(db, 'questions', `static_q_${i}`), {
-                    ...staticSet[i],
-                    updatedAt: serverTimestamp()
-                }));
-            }
-            if (state.currentUser && !state.currentUser.isGuest) {
-                promises.push(setDoc(doc(db, 'users', state.currentUser.uid), {
-                    displayName: state.userProfile.displayName,
-                    avatar: state.userProfile.avatar,
-                    elo: state.userProfile.elo,
-                    stats: state.userProfile.stats,
-                    updatedAt: serverTimestamp()
-                }));
-            }
-            await Promise.all(promises);
-            showToast("✅ Cloud sync completed!");
+            showToast("Syncing questions & profile to Firestore (specrush)...");
+            await syncQuestionsToFirestore(questionDB.staticQuestions, state.userProfile);
+            showToast("✅ Cloud sync completed successfully!");
         } catch(e) {
-            showToast("Sync note: " + e.message, true);
+            console.error("Cloud sync error:", e);
+            showToast("Sync error: " + (e.message || "Failed to sync"), true);
         }
     });
 }

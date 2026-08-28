@@ -158,7 +158,7 @@
         </section>
 
         <!-- ========================================================================= -->
-        <!-- SCREEN 1: FIRST-LAUNCH AUTHENTICATION SCREEN (4 MODES) -->
+        <!-- SCREEN 1: FIRST-LAUNCH AUTHENTICATION SCREEN (ANONYMOUS, GOOGLE, EMAIL) -->
         <!-- ========================================================================= -->
         <section id="screen-login" class="w-full max-w-md glass-panel p-8 rounded-2xl shadow-2xl space-y-6 hidden transition-all duration-300">
             <div class="text-center space-y-2">
@@ -166,7 +166,7 @@
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                 </div>
                 <h2 class="text-2xl font-bold tracking-tight text-white">Join WACE Math Rush</h2>
-                <p class="text-xs text-slate-400">Choose your preferred login method to enter the arena</p>
+                <p class="text-xs text-slate-400">Choose your login method to enter the arena</p>
             </div>
 
             <!-- Option 1: Fast Anonymous Sign-In -->
@@ -199,19 +199,6 @@
                     <button type="submit" id="btn-submit-email-auth" class="w-full py-2.5 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs transition">
                         Sign In with Email
                     </button>
-                </form>
-            </div>
-
-            <!-- Option 4: Local Guest Mode -->
-            <div class="border-t border-slate-800 pt-4 space-y-3">
-                <span class="text-xs font-bold text-slate-400 block">Offline Guest Mode</span>
-                <form id="form-guest-login" class="space-y-2" onsubmit="return false;">
-                    <div class="flex items-center space-x-2">
-                        <input type="text" id="input-guest-name" maxlength="15" placeholder="Guest Nickname" class="flex-grow px-3.5 py-2 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs" required>
-                        <button type="submit" id="btn-guest-login" class="px-4 py-2 rounded-xl font-bold glass-button text-slate-300 hover:text-white text-xs transition">
-                            Play as Guest
-                        </button>
-                    </div>
                 </form>
             </div>
         </section>
@@ -467,7 +454,7 @@
                     <span class="text-xs text-slate-400" id="rooms-count-label">0 rooms available</span>
                 </div>
                 <div id="rooms-list-container" class="space-y-2 max-h-56 overflow-y-auto pr-1">
-                    <div class="p-6 text-center text-xs text-slate-500 italic">No public matches active. Create one to get started!</div>
+                    <div class="p-6 text-center text-xs text-slate-500 italic">No public matches active on specrush. Create one to get started!</div>
                 </div>
             </div>
         </section>
@@ -717,9 +704,9 @@
     <footer class="w-full border-t border-slate-900 bg-slate-950/80 backdrop-blur text-center py-4 text-xs text-slate-500 z-10 space-y-1">
         <p>WACE Math Rush &bull; Western Australian Certificate of Education Competitive Training Platform &bull; Powered by Gemini 3.7 Flash &amp; Flash-Lite</p>
         <div class="flex items-center justify-center space-x-2 text-[11px] font-mono text-slate-400">
-            <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold" id="app-version-badge">v2.5.0</span>
+            <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold" id="app-version-badge">v2.5.2</span>
             <span class="text-slate-600">&bull;</span>
-            <span id="app-build-date">Build 2026.08.29-01</span>
+            <span id="app-build-date">Build 2026.08.29-0140</span>
         </div>
     </footer>
 
