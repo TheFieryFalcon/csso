@@ -20,7 +20,7 @@ export const SvgBuilder = {
         </svg>
         `;
     },
-    planeTemplate(content, size = 260, xRange = [-5, 5], yRange = [-5, 5]) {
+    planeTemplate(content, size = 260) {
         const center = size / 2;
         return `
         <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="bg-slate-900/90 rounded-2xl border border-slate-800 shadow-inner">
@@ -81,3 +81,150 @@ export const SvgBuilder = {
         return `<path d="M ${p1.x} ${p1.y} A ${radius} ${radius} 0 ${largeArc} 1 ${p2.x} ${p2.y}" stroke="${color}" stroke-width="${width}" fill="none"/>`;
     }
 };
+
+export function svgCircleTheorem(type = 'alt_segment') {
+    const r = 100;
+    if (type === 'alt_segment') {
+        const pA = SvgBuilder.polarToCartesian(r, 180);
+        const pB = SvgBuilder.polarToCartesian(r, 60);
+        const pC = SvgBuilder.polarToCartesian(r, 310);
+        const tLeft = { x: pA.x - 45, y: pA.y };
+        const tRight = { x: pA.x + 45, y: pA.y };
+        return SvgBuilder.circleTemplate(`
+            ${SvgBuilder.line(tLeft, tRight, '#f43f5e', 2.5)}
+            ${SvgBuilder.path([pA, pB, pC], true, '#818cf8', 'rgba(99, 102, 241, 0.1)', 2)}
+            ${SvgBuilder.dot(pA, 'A', {x: 0, y: 15})}
+            ${SvgBuilder.dot(pB, 'B', {x: 10, y: -5})}
+            ${SvgBuilder.dot(pC, 'C', {x: -10, y: -5})}
+            ${SvgBuilder.text(tLeft.x - 10, tLeft.y + 4, 'T', '#f43f5e')}
+        `);
+    } else if (type === 'chords') {
+        const pA = SvgBuilder.polarToCartesian(r, 220);
+        const pB = SvgBuilder.polarToCartesian(r, 40);
+        const pC = SvgBuilder.polarToCartesian(r, 140);
+        const pD = SvgBuilder.polarToCartesian(r, 330);
+        const pP = { x: 5, y: 10 };
+        return SvgBuilder.circleTemplate(`
+            ${SvgBuilder.line(pA, pB, '#818cf8', 2)}
+            ${SvgBuilder.line(pC, pD, '#ec4899', 2)}
+            ${SvgBuilder.dot(pA, 'A')}
+            ${SvgBuilder.dot(pB, 'B')}
+            ${SvgBuilder.dot(pC, 'C')}
+            ${SvgBuilder.dot(pD, 'D')}
+            ${SvgBuilder.dot(pP, 'P', {x: 10, y: 10}, '#fbbf24')}
+        `);
+    } else if (type === 'cyclic_quad' || type === 'ptolemy') {
+        const pA = SvgBuilder.polarToCartesian(r, 45);
+        const pB = SvgBuilder.polarToCartesian(r, 120);
+        const pC = SvgBuilder.polarToCartesian(r, 230);
+        const pD = SvgBuilder.polarToCartesian(r, 315);
+        return SvgBuilder.circleTemplate(`
+            ${SvgBuilder.path([pA, pB, pC, pD], true, '#818cf8', 'rgba(129, 140, 248, 0.1)', 2)}
+            ${SvgBuilder.line(pA, pC, '#ec4899', 1.5, '3,3')}
+            ${SvgBuilder.line(pB, pD, '#ec4899', 1.5, '3,3')}
+            ${SvgBuilder.dot(pA, 'A')}
+            ${SvgBuilder.dot(pB, 'B')}
+            ${SvgBuilder.dot(pC, 'C')}
+            ${SvgBuilder.dot(pD, 'D')}
+        `);
+    } else if (type === 'tangent_secant') {
+        const pT = SvgBuilder.polarToCartesian(r, 90);
+        const pA = SvgBuilder.polarToCartesian(r, 200);
+        const pB = SvgBuilder.polarToCartesian(r, 270);
+        const pP = { x: 130, y: 50 };
+        return SvgBuilder.circleTemplate(`
+            ${SvgBuilder.line(pP, pT, '#f43f5e', 2)}
+            ${SvgBuilder.line(pP, pA, '#818cf8', 2)}
+            ${SvgBuilder.dot(pT, 'T')}
+            ${SvgBuilder.dot(pA, 'A')}
+            ${SvgBuilder.dot(pB, 'B')}
+            ${SvgBuilder.dot(pP, 'P', {x: 10, y: 10}, '#fbbf24')}
+        `);
+    }
+    return SvgBuilder.circleTemplate('');
+}
+
+export function svgVectorProofDiagram(type = 'apollonius') {
+    if (type === 'apollonius') {
+        const pA = { x: 0, y: -70 };
+        const pB = { x: -80, y: 50 };
+        const pC = { x: 80, y: 50 };
+        const pD = { x: 0, y: 50 };
+        return SvgBuilder.planeTemplate(`
+            ${SvgBuilder.path([pA, pB, pC], true, '#818cf8', 'rgba(99, 102, 241, 0.1)', 2)}
+            ${SvgBuilder.line(pA, pD, '#ec4899', 2.5)}
+            ${SvgBuilder.dot(pA, 'A')}
+            ${SvgBuilder.dot(pB, 'B')}
+            ${SvgBuilder.dot(pC, 'C')}
+            ${SvgBuilder.dot(pD, 'D (Midpoint)', {x: 0, y: 15}, '#fbbf24')}
+        `);
+    } else if (type === 'centroid') {
+        const pA = { x: -20, y: -70 };
+        const pB = { x: -80, y: 50 };
+        const pC = { x: 80, y: 50 };
+        const pD = { x: 0, y: 50 };
+        const pE = { x: 30, y: -10 };
+        const pF = { x: -50, y: -10 };
+        const pG = { x: -6, y: 10 };
+        return SvgBuilder.planeTemplate(`
+            ${SvgBuilder.path([pA, pB, pC], true, '#818cf8', 'none', 2)}
+            ${SvgBuilder.line(pA, pD, '#64748b', 1.5, '2,2')}
+            ${SvgBuilder.line(pB, pE, '#64748b', 1.5, '2,2')}
+            ${SvgBuilder.line(pC, pF, '#64748b', 1.5, '2,2')}
+            ${SvgBuilder.dot(pA, 'A')}
+            ${SvgBuilder.dot(pB, 'B')}
+            ${SvgBuilder.dot(pC, 'C')}
+            ${SvgBuilder.dot(pG, 'G (Centroid)', {x: 10, y: -8}, '#fbbf24')}
+        `);
+    } else if (type === 'rhombus') {
+        const pO = { x: 0, y: 50 };
+        const pU = { x: 60, y: 40 };
+        const pV = { x: 40, y: -30 };
+        const pUV = { x: 100, y: -40 };
+        return SvgBuilder.planeTemplate(`
+            ${SvgBuilder.path([pO, pU, pUV, pV], true, '#818cf8', 'rgba(129,140,248,0.1)', 2)}
+            ${SvgBuilder.line(pO, pUV, '#ec4899', 2)}
+            ${SvgBuilder.line(pU, pV, '#10b981', 2)}
+            ${SvgBuilder.dot(pO, 'O')}
+            ${SvgBuilder.dot(pU, 'u')}
+            ${SvgBuilder.dot(pV, 'v')}
+            ${SvgBuilder.dot(pUV, 'u+v')}
+        `);
+    } else if (type === 'quad') {
+        const pA = { x: -70, y: -40 };
+        const pB = { x: 40, y: -60 };
+        const pC = { x: 80, y: 50 };
+        const pD = { x: -50, y: 60 };
+        const pP = { x: (pA.x + pB.x) / 2, y: (pA.y + pB.y) / 2 };
+        const pQ = { x: (pB.x + pC.x) / 2, y: (pB.y + pC.y) / 2 };
+        const pR = { x: (pC.x + pD.x) / 2, y: (pC.y + pD.y) / 2 };
+        const pS = { x: (pD.x + pA.x) / 2, y: (pD.y + pA.y) / 2 };
+        return SvgBuilder.planeTemplate(`
+            ${SvgBuilder.path([pA, pB, pC, pD], true, '#64748b', 'none', 1.5)}
+            ${SvgBuilder.path([pP, pQ, pR, pS], true, '#818cf8', 'rgba(129,140,248,0.15)', 2.5)}
+            ${SvgBuilder.dot(pP, 'P')}
+            ${SvgBuilder.dot(pQ, 'Q')}
+            ${SvgBuilder.dot(pR, 'R')}
+            ${SvgBuilder.dot(pS, 'S')}
+        `);
+    }
+    return SvgBuilder.planeTemplate('');
+}
+
+export function svgCircleAngles(angle = 50) {
+    const r = 100;
+    const pO = { x: 0, y: 0 };
+    const pA = SvgBuilder.polarToCartesian(r, 140);
+    const pB = SvgBuilder.polarToCartesian(r, 220);
+    const pP = SvgBuilder.polarToCartesian(r, 20);
+    return SvgBuilder.circleTemplate(`
+        ${SvgBuilder.line(pA, pO, '#6366f1', 2)}
+        ${SvgBuilder.line(pB, pO, '#6366f1', 2)}
+        ${SvgBuilder.line(pA, pP, '#ec4899', 2)}
+        ${SvgBuilder.line(pB, pP, '#ec4899', 2)}
+        ${SvgBuilder.dot(pO, 'O (Center)', {x: 10, y: 12}, '#fbbf24')}
+        ${SvgBuilder.dot(pA, 'A')}
+        ${SvgBuilder.dot(pB, 'B')}
+        ${SvgBuilder.dot(pP, 'P')}
+    `);
+}
