@@ -1,543 +1,132 @@
 // ---------------------------------------------------------
-// 20 MULTI-STEP PROOFS & THEOREMS (SPEC TRIG, VECTORS, GEOMETRY)
-// Equipped with Asymptote-Style SVG Diagrams & Gemini Verification Criteria
+// RIGOROUS PROOFS GENERATOR MODULE
+// Contains:
+// 1. Procedural Multi-Step Proofs (Deterministic steps)
+// 2. Single-Step Long-Answer Proofs (Evaluated via Gemini 3.7 Flash)
 // ---------------------------------------------------------
-import { SvgBuilder } from '../svg-builder.js';
+import { svgCircleTheorem, svgVectorProofDiagram, svgCircleAngles } from '../svg-builder.js';
 
 export const proofGenerators = {
     // =========================================================
-    // SECTION A: SPECIALIST TRIGONOMETRY PROOFS (7 PROOFS)
+    // SECTION A: PROCEDURAL MULTI-STEP PROOFS (Deterministic)
     // =========================================================
-
-    // 1. Triple Angle Cosine Proof
     genProofTrigTripleAngleCos() {
         return {
             type: 'multi_step',
-            isProof: true,
             topic: 'Trigonometry (Spec)',
-            text: `Proof of Triple Angle Formula: $\\cos(3x) = 4\\cos^3(x) - 3\\cos(x)$`,
+            text: `Derive the Triple Angle identity for cosine: $\\cos(3x) = 4\\cos^3(x) - 3\\cos(x)$.`,
             steps: [
                 {
-                    prompt: `Step 1: Write $\\cos(3x)$ as $\\cos(2x + x)$ and apply the compound angle cosine addition formula $\\cos(A+B) = \\cos A \\cos B - \\sin A \\sin B$. Which expression is obtained?`,
+                    prompt: `Step 1: Write $\\cos(3x)$ as $\\cos(2x + x)$ and apply the compound angle formula $\\cos(A+B) = \\cos A \\cos B - \\sin A \\sin B$. Which expression is correct?`,
                     type: 'mcq',
                     options: [
                         `$\\cos(2x)\\cos(x) - \\sin(2x)\\sin(x)$`,
                         `$\\cos(2x)\\cos(x) + \\sin(2x)\\sin(x)$`,
-                        `$\\cos(3x) - \\sin(3x)$`,
-                        `$2\\cos(x)\\cos(2x)$`
+                        `$\\cos(3x)\\cos(x) - \\sin(3x)\\sin(x)$`,
+                        `$2\\cos(x)\\sin(x) - \\cos(2x)$`
                     ],
                     ansIndex: 0
                 },
                 {
-                    prompt: `Step 2: Substitute $\\cos(2x) = 2\\cos^2(x) - 1$ and $\\sin(2x) = 2\\sin(x)\\cos(x)$. Express the entire equation in terms of $\\cos(x)$ and $\\sin^2(x)$.`,
-                    type: 'mcq',
-                    options: [
-                        `$(2\\cos^2(x) - 1)\\cos(x) - 2\\sin^2(x)\\cos(x)$`,
-                        `$(2\\cos^2(x) + 1)\\cos(x) + 2\\sin^2(x)\\cos(x)$`,
-                        `$2\\cos^3(x) - 2\\sin^2(x)$`,
-                        `$\\cos^3(x) - 3\\sin^2(x)\\cos(x)$`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 3: Replace $\\sin^2(x)$ with $1 - \\cos^2(x)$ and simplify algebraically. State the final coefficient of $\\cos^3(x)$.`,
+                    prompt: `Step 2: Substitute $\\cos(2x) = 2\\cos^2(x) - 1$ and $\\sin(2x) = 2\\sin(x)\\cos(x)$. Simplify to find the coefficient of $\\cos^3(x)$.`,
                     type: 'short_answer',
-                    acceptableAnswers: ['4', '4cos^3(x)', '+4'],
-                    expectedAnswerGuidelines: 'Coefficient is 4 since 2cos^3(x) - (-2cos^3(x)) = 4cos^3(x)'
+                    acceptableAnswers: ['4', 'k=4', '+4']
                 }
             ]
         };
     },
 
-    // 2. Double Angle Half-Tangent Proof
     genProofTrigHalfTangent() {
         return {
             type: 'multi_step',
-            isProof: true,
             topic: 'Trigonometry (Spec)',
-            text: `Proof of Identity: $\\frac{\\sin(2x)}{1 + \\cos(2x)} = \\tan(x)$`,
+            text: `Prove the half-angle tangent identity: $\\frac{\\sin(2x)}{1 + \\cos(2x)} = \\tan(x)$.`,
             steps: [
                 {
-                    prompt: `Step 1: Using double angle formulas, substitute $\\sin(2x) = 2\\sin(x)\\cos(x)$ and $\\cos(2x) = 2\\cos^2(x) - 1$. What does the denominator $1 + \\cos(2x)$ simplify to?`,
+                    prompt: `Step 1: Replace $\\sin(2x)$ with $2\\sin(x)\\cos(x)$ and $\\cos(2x)$ with $2\\cos^2(x) - 1$. What does the denominator $1 + \\cos(2x)$ simplify to?`,
                     type: 'short_answer',
-                    acceptableAnswers: ['2cos^2(x)', '2cos^2x', '2*cos(x)^2'],
-                    expectedAnswerGuidelines: '1 + (2cos^2(x) - 1) = 2cos^2(x)'
+                    acceptableAnswers: ['2cos^2(x)', '2cos^2x', '2*cos(x)^2', '2(cos(x))^2']
                 },
                 {
-                    prompt: `Step 2: Simplify the fraction $\\frac{2\\sin(x)\\cos(x)}{2\\cos^2(x)}$ by cancelling common non-zero factors ($2\\cos(x)$).`,
-                    type: 'mcq',
-                    options: [
-                        `$\\frac{\\sin(x)}{\\cos(x)} = \\tan(x)$`,
-                        `$\\frac{\\cos(x)}{\\sin(x)} = \\cot(x)$`,
-                        `$2\\tan(x)$`,
-                        `$\\sin(x)\\cos(x)$`
-                    ],
-                    ansIndex: 0
-                }
-            ]
-        };
-    },
-
-    // 3. Triple Sum Tangent Addition Proof
-    genProofTrigTripleTangent() {
-        return {
-            type: 'multi_step',
-            isProof: true,
-            topic: 'Trigonometry (Spec)',
-            text: `Proof of 3-Angle Tangent Identity: $\\tan(A+B+C) = \\frac{\\sum \\tan A - \\prod \\tan A}{1 - \\sum \\tan A \\tan B}$`,
-            steps: [
-                {
-                    prompt: `Step 1: Let $\\theta = A + B$. Apply the tangent addition formula $\\tan(\\theta + C) = \\frac{\\tan\\theta + \\tan C}{1 - \\tan\\theta\\tan C}$. What is the numerator after substituting $\\tan(A+B) = \\frac{\\tan A + \\tan B}{1 - \\tan A\\tan B}$ and finding a common denominator?`,
-                    type: 'mcq',
-                    options: [
-                        `$\\tan A + \\tan B + \\tan C - \\tan A \\tan B \\tan C$`,
-                        `$\\tan A + \\tan B + \\tan C + \\tan A \\tan B \\tan C$`,
-                        `$\\tan A \\tan B \\tan C - (\\tan A + \\tan B + \\tan C)$`,
-                        `$1 - \\tan A \\tan B - \\tan B \\tan C - \\tan C \\tan A$`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 2: If $A, B, C$ are the interior angles of a triangle ($A + B + C = \\pi$), then $\\tan(A+B+C) = \\tan(\\pi) = 0$. What fundamental relation between $\\tan A + \\tan B + \\tan C$ and $\\tan A \\tan B \\tan C$ follows?`,
-                    type: 'mcq',
-                    options: [
-                        `$\\tan A + \\tan B + \\tan C = \\tan A \\tan B \\tan C$`,
-                        `$\\tan A + \\tan B + \\tan C = 0$`,
-                        `$\\tan A \\tan B \\tan C = 1$`,
-                        `$\\tan A + \\tan B + \\tan C = -1$`
-                    ],
-                    ansIndex: 0
-                }
-            ]
-        };
-    },
-
-    // 4. Telescoping Cosine Sum Product Proof
-    genProofTrigTelescopingCosSum() {
-        return {
-            type: 'multi_step',
-            isProof: true,
-            topic: 'Trigonometry (Spec)',
-            text: `Proof of Summation Identity: $\\sum_{k=1}^3 \\cos((2k-1)x) = \\frac{\\sin(6x)}{2\\sin(x)}$`,
-            steps: [
-                {
-                    prompt: `Step 1: Multiply the sum $S = \\cos(x) + \\cos(3x) + \\cos(5x)$ by $2\\sin(x)$. Apply the product-to-sum identity $2\\sin(x)\\cos(nx) = \\sin((n+1)x) - \\sin((n-1)x)$ to each term. What telescoping sum is produced?`,
-                    type: 'mcq',
-                    options: [
-                        `$(\\sin(2x) - 0) + (\\sin(4x) - \\sin(2x)) + (\\sin(6x) - \\sin(4x))$`,
-                        `$(\\sin(2x) + \\sin(0)) + (\\sin(4x) + \\sin(2x)) + (\\sin(6x) + \\sin(4x))$`,
-                        `$\\sin(6x) - \\sin(x)$`,
-                        `$2\\sin(6x) - 2\\sin(2x)$`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 2: After telescoping cancellation of intermediate terms, what is the single remaining numerator term?`,
+                    prompt: `Step 2: Divide numerator by denominator: $\\frac{2\\sin(x)\\cos(x)}{2\\cos^2(x)}$. What single trigonometric ratio remains?`,
                     type: 'short_answer',
-                    acceptableAnswers: ['sin(6x)', '\\sin(6x)', 'sin6x'],
-                    expectedAnswerGuidelines: 'All intermediate terms sin(2x) and sin(4x) cancel, leaving sin(6x).'
+                    acceptableAnswers: ['tan(x)', 'tanx', 'tan']
                 }
             ]
         };
     },
 
-    // 5. Complementary Inverse Trig Proof
-    genProofTrigArcSinArcCos() {
-        return {
-            type: 'multi_step',
-            isProof: true,
-            topic: 'Trigonometry (Spec)',
-            text: `Proof that $\\arcsin(x) + \\arccos(x) = \\frac{\\pi}{2}$ for all $x \\in [-1, 1]$`,
-            steps: [
-                {
-                    prompt: `Step 1: Let $\\theta = \\arcsin(x)$, so $\\sin(\\theta) = x$ with $\\theta \\in [-\\frac{\\pi}{2}, \\frac{\\pi}{2}]$. Using the co-function identity, write $x$ as a cosine: $x = \\cos(\\phi)$. What is $\\phi$ in terms of $\\theta$?`,
-                    type: 'mcq',
-                    options: [
-                        `$\\phi = \\frac{\\pi}{2} - \\theta$`,
-                        `$\\phi = \\pi - \\theta$`,
-                        `$\\phi = \\theta - \\frac{\\pi}{2}$`,
-                        `$\\phi = 2\\pi - \\theta$`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 2: Since $x = \\cos\\left(\\frac{\\pi}{2} - \\theta\\right)$ and $\\frac{\\pi}{2} - \\theta \\in [0, \\pi]$, it follows that $\\arccos(x) = \\frac{\\pi}{2} - \\theta$. Adding $\\arcsin(x) = \\theta$ yields what constant sum?`,
-                    type: 'short_answer',
-                    acceptableAnswers: ['pi/2', '\\pi/2', '1.5708'],
-                    expectedAnswerGuidelines: 'arcsin(x) + arccos(x) = theta + (pi/2 - theta) = pi/2'
-                }
-            ]
-        };
-    },
-
-    // 6. Multiple Angle Sum Identity Proof
-    genProofTrigFourAngleCos() {
-        return {
-            type: 'multi_step',
-            isProof: true,
-            topic: 'Trigonometry (Spec)',
-            text: `Proof of Identity: $1 + \\cos(2\\theta) + \\cos(4\\theta) + \\cos(6\\theta) = 4\\cos(\\theta)\\cos(2\\theta)\\cos(3\\theta)$`,
-            steps: [
-                {
-                    prompt: `Step 1: Group the terms as $(1 + \\cos(6\\theta)) + (\\cos(2\\theta) + \\cos(4\\theta))$. Use $1 + \\cos(6\\theta) = 2\\cos^2(3\\theta)$ and the sum-to-product formula $\\cos(2\\theta) + \\cos(4\\theta) = 2\\cos(3\\theta)\\cos(\\theta)$. Factor out the common term $2\\cos(3\\theta)$. What expression remains in parentheses?`,
-                    type: 'mcq',
-                    options: [
-                        `$\\cos(3\\theta) + \\cos(\\theta)$`,
-                        `$\\cos(3\\theta) - \\cos(\\theta)$`,
-                        `$2\\cos(3\\theta)$`,
-                        `$\\cos(2\\theta) + 1$`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 2: Apply sum-to-product again to $\\cos(3\\theta) + \\cos(\\theta) = 2\\cos(2\\theta)\\cos(\\theta)$. Multiply by the outer factor $2\\cos(3\\theta)$ to obtain the final product. What is the scalar coefficient?`,
-                    type: 'short_answer',
-                    acceptableAnswers: ['4', '+4'],
-                    expectedAnswerGuidelines: '2 * 2 = 4'
-                }
-            ]
-        };
-    },
-
-    // 7. Auxiliary R-Formula Transformation Proof
-    genProofTrigRFormulaDerivation() {
-        return {
-            type: 'multi_step',
-            isProof: true,
-            topic: 'Trigonometry (Spec)',
-            text: `Proof of the Auxiliary R-Formula: $a\\cos(x) + b\\sin(x) \\equiv R\\cos(x - \\alpha)$`,
-            steps: [
-                {
-                    prompt: `Step 1: Expand $R\\cos(x - \\alpha) = R\\cos(x)\\cos(\\alpha) + R\\sin(x)\\sin(\\alpha)$. Equating coefficients with $a\\cos(x) + b\\sin(x)$ gives $R\\cos(\\alpha) = a$ and $R\\sin(\\alpha) = b$. Squaring and adding both equations ($R^2\\cos^2\\alpha + R^2\\sin^2\\alpha$) yields $R^2 = ?$`,
-                    type: 'short_answer',
-                    acceptableAnswers: ['a^2 + b^2', 'a^2+b^2', 'b^2+a^2'],
-                    expectedAnswerGuidelines: 'R^2(cos^2(alpha) + sin^2(alpha)) = a^2 + b^2 => R^2 = a^2 + b^2'
-                },
-                {
-                    prompt: `Step 2: Dividing $R\\sin(\\alpha) = b$ by $R\\cos(\\alpha) = a$ yields what exact expression for $\\tan(\\alpha)$?`,
-                    type: 'mcq',
-                    options: [
-                        `$\\tan(\\alpha) = \\frac{b}{a}$`,
-                        `$\\tan(\\alpha) = \\frac{a}{b}$`,
-                        `$\\tan(\\alpha) = \\frac{a^2}{b^2}$`,
-                        `$\\tan(\\alpha) = \\sqrt{a^2 + b^2}$`
-                    ],
-                    ansIndex: 0
-                }
-            ]
-        };
-    },
-
-    // =========================================================
-    // SECTION B: VECTORS IN THE PLANE & 3D PROOFS (7 PROOFS)
-    // =========================================================
-
-    // 8. Vector Proof of Apollonius' Theorem
     genProofVectorApollonius() {
-        const visual = SvgBuilder.planeTemplate(`
-            ${SvgBuilder.path([{x: -70, y: 50}, {x: 70, y: 50}, {x: 0, y: -60}], true, '#818cf8')}
-            ${SvgBuilder.line({x: 0, y: -60}, {x: 0, y: 50}, '#ec4899', 2, '4,4')}
-            ${SvgBuilder.dot({x: 0, y: -60}, 'A', {x: 0, y: -12})}
-            ${SvgBuilder.dot({x: -70, y: 50}, 'B', {x: -12, y: 12})}
-            ${SvgBuilder.dot({x: 70, y: 50}, 'C', {x: 12, y: 12})}
-            ${SvgBuilder.dot({x: 0, y: 50}, 'D (Midpoint)', {x: 0, y: 15}, '#ec4899')}
-        `);
+        const visual = svgVectorProofDiagram('apollonius');
         return {
             type: 'multi_step',
-            isProof: true,
             topic: 'Vectors in the Plane',
-            text: `Vector Proof of Apollonius' Theorem: $|AB|^2 + |AC|^2 = 2|AD|^2 + 2|BD|^2$`,
+            text: `Prove Apollonius' Theorem: In $\\triangle ABC$ with median $AD$ to midpoint $D$ of $BC$, $|AB|^2 + |AC|^2 = 2|AD|^2 + 2|BD|^2$.`,
             visual: visual,
             steps: [
                 {
-                    prompt: `Step 1: Set the origin at midpoint $D$, so position vector $\\mathbf{d} = \\mathbf{0}$. If $B$ has vector $-\\mathbf{m}$, then $C$ has vector $+\\mathbf{m}$. Let $A$ have vector $\\mathbf{a}$. Express $\\vec{AB} = \\mathbf{b} - \\mathbf{a}$ and $\\vec{AC} = \\mathbf{c} - \\mathbf{a}$ in terms of $\\mathbf{a}$ and $\\mathbf{m}$.`,
-                    type: 'mcq',
-                    options: [
-                        `$\\vec{AB} = -\\mathbf{m} - \\mathbf{a}$ and $\\vec{AC} = \\mathbf{m} - \\mathbf{a}$`,
-                        `$\\vec{AB} = \\mathbf{a} + \\mathbf{m}$ and $\\vec{AC} = \\mathbf{a} - \\mathbf{m}$`,
-                        `$\\vec{AB} = 2\\mathbf{m}$ and $\\vec{AC} = 2\\mathbf{a}$`,
-                        `$\\vec{AB} = -\\mathbf{a}$ and $\\vec{AC} = \\mathbf{m}$`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 2: Expand $|AB|^2 + |AC|^2 = |-\\mathbf{m} - \\mathbf{a}|^2 + |\\mathbf{m} - \\mathbf{a}|^2 = (\\mathbf{m}+\\mathbf{a})\\cdot(\\mathbf{m}+\\mathbf{a}) + (\\mathbf{m}-\\mathbf{a})\\cdot(\\mathbf{m}-\\mathbf{a})$. What is the simplified dot product expansion?`,
-                    type: 'mcq',
-                    options: [
-                        `$2|\\mathbf{a}|^2 + 2|\\mathbf{m}|^2$`,
-                        `$|\\mathbf{a}|^2 + |\\mathbf{m}|^2$`,
-                        `$4\\mathbf{a}\\cdot\\mathbf{m}$`,
-                        `$2|\\mathbf{a}|^2 - 2|\\mathbf{m}|^2$`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 3: Since $|\\mathbf{a}| = |AD|$ (median length) and $|\\mathbf{m}| = |BD|$, what is the coefficient multiplying $(|AD|^2 + |BD|^2)$?`,
+                    prompt: `Step 1: Set the origin at midpoint $D$, so $\\mathbf{d} = \\mathbf{0}$. If position vector of $B$ is $\\mathbf{b}$, what is the position vector of $C$?`,
                     type: 'short_answer',
-                    acceptableAnswers: ['2', '+2'],
-                    expectedAnswerGuidelines: '|AB|^2 + |AC|^2 = 2(|AD|^2 + |BD|^2)'
+                    acceptableAnswers: ['-b', '-1b', '-\\mathbf{b}']
+                },
+                {
+                    prompt: `Step 2: $|AB|^2 + |AC|^2 = |\\mathbf{b}-\\mathbf{a}|^2 + |-\\mathbf{b}-\\mathbf{a}|^2$. Expand and simplify using dot products. What is the multiplier $k$ in $k(|\\mathbf{a}|^2 + |\\mathbf{b}|^2)$?`,
+                    type: 'short_answer',
+                    acceptableAnswers: ['2', 'k=2']
                 }
             ]
         };
     },
 
-    // 9. Centroid Concurrency Proof
     genProofVectorCentroid() {
-        const visual = SvgBuilder.planeTemplate(`
-            ${SvgBuilder.path([{x: -80, y: 60}, {x: 80, y: 60}, {x: 20, y: -70}], true, '#818cf8')}
-            ${SvgBuilder.line({x: 20, y: -70}, {x: 0, y: 60}, '#94a3b8', 1.5, '3,3')}
-            ${SvgBuilder.line({x: -80, y: 60}, {x: 50, y: -5}, '#94a3b8', 1.5, '3,3')}
-            ${SvgBuilder.line({x: 80, y: 60}, {x: -30, y: -5}, '#94a3b8', 1.5, '3,3')}
-            ${SvgBuilder.dot({x: 6.67, y: 16.67}, 'G', {x: 12, y: -8}, '#ec4899')}
-        `);
+        const visual = svgVectorProofDiagram('centroid');
         return {
             type: 'multi_step',
-            isProof: true,
             topic: 'Vectors in the Plane',
-            text: `Vector Proof of Centroid Concurrency in $\\triangle ABC$`,
+            text: `Prove that the medians of $\\triangle ABC$ concur at the centroid $\\mathbf{g} = \\frac{1}{3}(\\mathbf{a} + \\mathbf{b} + \\mathbf{c})$.`,
             visual: visual,
             steps: [
                 {
-                    prompt: `Step 1: Let the position vectors of vertices $A, B, C$ be $\\mathbf{a}, \\mathbf{b}, \\mathbf{c}$. The midpoint of side $BC$ is $D = \\frac{\\mathbf{b} + \\mathbf{c}}{2}$. Point $G$ divides median $AD$ in the ratio $2:1$ from $A$. Use the section formula $\\mathbf{g} = \\frac{1\\mathbf{a} + 2\\mathbf{d}}{1 + 2}$ to find $\\mathbf{g}$.`,
+                    prompt: `Step 1: Let $D$ be the midpoint of $BC$. Write its position vector $\\mathbf{d}$ in terms of $\\mathbf{b}$ and $\\mathbf{c}$.`,
                     type: 'mcq',
                     options: [
-                        `$\\mathbf{g} = \\frac{\\mathbf{a} + \\mathbf{b} + \\mathbf{c}}{3}$`,
-                        `$\\mathbf{g} = \\frac{\\mathbf{a} + 2\\mathbf{b} + 2\\mathbf{c}}{5}$`,
-                        `$\\mathbf{g} = \\frac{\\mathbf{a} + \\mathbf{b} + \\mathbf{c}}{2}$`,
-                        `$\\mathbf{g} = \\frac{2\\mathbf{a} + \\mathbf{b} + \\mathbf{c}}{4}$`
+                        `$\\frac{\\mathbf{b} + \\mathbf{c}}{2}$`,
+                        `$\\frac{\\mathbf{b} - \\mathbf{c}}{2}$`,
+                        `$\\frac{2\\mathbf{b} + \\mathbf{c}}{3}$`,
+                        `$\\mathbf{b} + \\mathbf{c}$`
                     ],
                     ansIndex: 0
                 },
                 {
-                    prompt: `Step 2: Because the expression $\\frac{\\mathbf{a} + \\mathbf{b} + \\mathbf{c}}{3}$ is completely symmetric in $\\mathbf{a}, \\mathbf{b}, \\mathbf{c}$, does the same point $G$ divide the other two medians $BE$ and $CF$ in the ratio $2:1$?`,
-                    type: 'mcq',
-                    options: [
-                        `Yes, proving all three medians are concurrent at G`,
-                        `No, each median has a different division point`
-                    ],
-                    ansIndex: 0
-                }
-            ]
-        };
-    },
-
-    // 10. Vector Pythagorean Theorem Proof
-    genProofVectorPythagoras() {
-        return {
-            type: 'multi_step',
-            isProof: true,
-            topic: 'Vectors in the Plane',
-            text: `Vector Dot Product Proof of the Pythagorean Theorem`,
-            steps: [
-                {
-                    prompt: `Step 1: In right-angled triangle $ABC$, let $\\vec{CB} = \\mathbf{a}$ and $\\vec{CA} = \\mathbf{b}$ meet at $90^\\circ$ at vertex $C$. What is the value of the dot product $\\mathbf{a} \\cdot \\mathbf{b}$?`,
+                    prompt: `Step 2: The centroid $G$ divides median $AD$ in the ratio $2:1$. Using the section formula $\\mathbf{g} = \\frac{1\\mathbf{a} + 2\\mathbf{d}}{1+2}$, what is the scalar denominator?`,
                     type: 'short_answer',
-                    acceptableAnswers: ['0', 'zero'],
-                    expectedAnswerGuidelines: 'Perpendicular vectors have dot product equal to zero: a . b = |a||b|cos(90) = 0.'
-                },
-                {
-                    prompt: `Step 2: The hypotenuse vector is $\\mathbf{c} = \\vec{AB} = \\mathbf{a} - \\mathbf{b}$. Expand the squared magnitude $|\\mathbf{c}|^2 = (\\mathbf{a} - \\mathbf{b}) \\cdot (\\mathbf{a} - \\mathbf{b})$. Since $\\mathbf{a} \\cdot \\mathbf{b} = 0$, what does this simplify to?`,
-                    type: 'mcq',
-                    options: [
-                        `$|\\mathbf{a}|^2 + |\\mathbf{b}|^2$`,
-                        `$|\\mathbf{a}|^2 - |\\mathbf{b}|^2$`,
-                        `$|\\mathbf{a}|^2 + |\\mathbf{b}|^2 - 2|\\mathbf{a}||\\mathbf{b}|$`,
-                        `$2|\\mathbf{a}|^2 + 2|\\mathbf{b}|^2$`
-                    ],
-                    ansIndex: 0
+                    acceptableAnswers: ['3', 'denominator=3']
                 }
             ]
         };
     },
 
-    // 11. Rhombus Perpendicular Diagonals Vector Proof
-    genProofVectorRhombusDiagonals() {
-        const visual = SvgBuilder.planeTemplate(`
-            ${SvgBuilder.path([{x: -60, y: 0}, {x: 0, y: -45}, {x: 60, y: 0}, {x: 0, y: 45}], true, '#818cf8')}
-            ${SvgBuilder.line({x: -60, y: 0}, {x: 60, y: 0}, '#ec4899', 2)}
-            ${SvgBuilder.line({x: 0, y: -45}, {x: 0, y: 45}, '#ec4899', 2)}
-            ${SvgBuilder.dot({x: 0, y: 0}, '90°', {x: 14, y: -6}, '#cbd5e1')}
-        `);
-        return {
-            type: 'multi_step',
-            isProof: true,
-            topic: 'Vectors in the Plane',
-            text: `Vector Proof: Diagonals of a Rhombus are Perpendicular`,
-            visual: visual,
-            steps: [
-                {
-                    prompt: `Step 1: Let the sides of rhombus $OACB$ be represented by vectors $\\vec{OA} = \\mathbf{u}$ and $\\vec{OB} = \\mathbf{v}$. By definition of a rhombus, $|\\mathbf{u}| = |\\mathbf{v}|$. The diagonal vectors are $\\vec{OC} = \\mathbf{u} + \\mathbf{v}$ and $\\vec{BA} = \\mathbf{u} - \\mathbf{v}$. Expand their dot product $(\\mathbf{u} + \\mathbf{v}) \\cdot (\\mathbf{u} - \\mathbf{v})$.`,
-                    type: 'mcq',
-                    options: [
-                        `$|\\mathbf{u}|^2 - |\\mathbf{v}|^2$`,
-                        `$|\\mathbf{u}|^2 + |\\mathbf{v}|^2$`,
-                        `$2\\mathbf{u} \\cdot \\mathbf{v}$`,
-                        `$0$`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 2: Since $|\\mathbf{u}| = |\\mathbf{v}|$, the difference $|\\mathbf{u}|^2 - |\\mathbf{v}|^2$ evaluates to what value?`,
-                    type: 'short_answer',
-                    acceptableAnswers: ['0', 'zero'],
-                    expectedAnswerGuidelines: '|u|^2 - |v|^2 = 0, proving the diagonals are perpendicular.'
-                }
-            ]
-        };
-    },
-
-    // 12. Cauchy-Schwarz Inequality Vector Proof
-    genProofVectorCauchySchwarz() {
-        return {
-            type: 'multi_step',
-            isProof: true,
-            topic: 'Vectors in the Plane',
-            text: `Vector Proof of Cauchy-Schwarz Inequality: $(\\mathbf{u} \\cdot \\mathbf{v})^2 \\le |\\mathbf{u}|^2 |\\mathbf{v}|^2$`,
-            steps: [
-                {
-                    prompt: `Step 1: Recall the geometric definition of the scalar dot product: $\\mathbf{u} \\cdot \\mathbf{v} = |\\mathbf{u}||\\mathbf{v}|\\cos(\\theta)$, where $\\theta$ is the angle between $\\mathbf{u}$ and $\\mathbf{v}$. Square both sides: $(\\mathbf{u} \\cdot \\mathbf{v})^2 = |\\mathbf{u}|^2 |\\mathbf{v}|^2 \\cos^2(\\theta)$. What is the maximum possible value of $\\cos^2(\\theta)$ for real angles $\\theta$?`,
-                    type: 'short_answer',
-                    acceptableAnswers: ['1', '1.0', '+1'],
-                    expectedAnswerGuidelines: 'For any real angle theta, -1 <= cos(theta) <= 1, so 0 <= cos^2(theta) <= 1.'
-                },
-                {
-                    prompt: `Step 2: Since $\\cos^2(\\theta) \\le 1$, it directly follows that $(\\mathbf{u} \\cdot \\mathbf{v})^2 \\le |\\mathbf{u}|^2 |\\mathbf{v}|^2$. Under what geometric condition does equality hold?`,
-                    type: 'mcq',
-                    options: [
-                        `When $\\mathbf{u}$ and $\\mathbf{v}$ are parallel/collinear ($\\theta = 0$ or $\\pi$)`,
-                        `When $\\mathbf{u}$ and $\\mathbf{v}$ are perpendicular ($\\theta = \\frac{\\pi}{2}$)`,
-                        `When $|\\mathbf{u}| = |\\mathbf{v}| = 1$`,
-                        `Never`
-                    ],
-                    ansIndex: 0
-                }
-            ]
-        };
-    },
-
-    // 13. Semicircle Angle Vector Proof (Thales' Theorem)
-    genProofVectorThalesSemicircle() {
-        const visual = SvgBuilder.circleTemplate(`
-            ${SvgBuilder.line({x: -70, y: 0}, {x: 70, y: 0}, '#6366f1')}
-            ${SvgBuilder.line({x: -70, y: 0}, {x: 20, y: -67.08}, '#818cf8')}
-            ${SvgBuilder.line({x: 70, y: 0}, {x: 20, y: -67.08}, '#818cf8')}
-            ${SvgBuilder.dot({x: 0, y: 0}, 'O', {x: 0, y: 15})}
-            ${SvgBuilder.dot({x: -70, y: 0}, 'A', {x: -12, y: 0})}
-            ${SvgBuilder.dot({x: 70, y: 0}, 'B', {x: 12, y: 0})}
-            ${SvgBuilder.dot({x: 20, y: -67.08}, 'P', {x: 0, y: -12}, '#ec4899')}
-        `);
-        return {
-            type: 'multi_step',
-            isProof: true,
-            topic: 'Vectors in the Plane',
-            text: `Vector Proof: Angle Subtended in a Semicircle is a Right Angle`,
-            visual: visual,
-            steps: [
-                {
-                    prompt: `Step 1: Let the centre of the circle of radius $r$ be the origin $O$. The diameter endpoints are $\\vec{OA} = -\\mathbf{r}$ and $\\vec{OB} = +\\mathbf{r}$. For any point $P$ on the circumference, position vector is $\\mathbf{p}$ with $|\\mathbf{p}| = r$. Express $\\vec{PA}$ and $\\vec{PB}$ in terms of $\\mathbf{p}$ and $\\mathbf{r}$.`,
-                    type: 'mcq',
-                    options: [
-                        `$\\vec{PA} = -\\mathbf{r} - \\mathbf{p}$ and $\\vec{PB} = \\mathbf{r} - \\mathbf{p}$`,
-                        `$\\vec{PA} = \\mathbf{p} - \\mathbf{r}$ and $\\vec{PB} = \\mathbf{p} + \\mathbf{r}$`,
-                        `$\\vec{PA} = 2\\mathbf{r}$ and $\\vec{PB} = 2\\mathbf{p}$`,
-                        `$\\vec{PA} = -\\mathbf{p}$ and $\\vec{PB} = \\mathbf{p}$`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 2: Take the dot product $\\vec{PA} \\cdot \\vec{PB} = (-\\mathbf{p} - \\mathbf{r}) \\cdot (-\\mathbf{p} + \\mathbf{r}) = |\\mathbf{p}|^2 - |\\mathbf{r}|^2$. Since $|\\mathbf{p}| = r$ and $|\\mathbf{r}| = r$, what is the result?`,
-                    type: 'short_answer',
-                    acceptableAnswers: ['0', 'zero'],
-                    expectedAnswerGuidelines: '|p|^2 - |r|^2 = r^2 - r^2 = 0, proving PA is perpendicular to PB (angle APB = 90 deg).'
-                }
-            ]
-        };
-    },
-
-    // 14. Varignon's Parallelogram Vector Proof
-    genProofVectorVarignon() {
-        const visual = SvgBuilder.planeTemplate(`
-            ${SvgBuilder.path([{x: -80, y: -40}, {x: 40, y: -70}, {x: 80, y: 40}, {x: -40, y: 70}], true, '#64748b')}
-            ${SvgBuilder.path([{x: -20, y: -55}, {x: 60, y: -15}, {x: 20, y: 55}, {x: -60, y: 15}], true, '#818cf8', 'rgba(99,102,241,0.15)')}
-            ${SvgBuilder.dot({x: -20, y: -55}, 'P', {x: 0, y: -10})}
-            ${SvgBuilder.dot({x: 60, y: -15}, 'Q', {x: 12, y: 0})}
-            ${SvgBuilder.dot({x: 20, y: 55}, 'R', {x: 0, y: 12})}
-            ${SvgBuilder.dot({x: -60, y: 15}, 'S', {x: -12, y: 0})}
-        `);
-        return {
-            type: 'multi_step',
-            isProof: true,
-            topic: 'Vectors in the Plane',
-            text: `Vector Proof of Varignon's Theorem: Midpoints of Any Quadrilateral Form a Parallelogram`,
-            visual: visual,
-            steps: [
-                {
-                    prompt: `Step 1: Let the vertices of quadrilateral $ABCD$ have vectors $\\mathbf{a}, \\mathbf{b}, \\mathbf{c}, \\mathbf{d}$. The midpoints of sides $AB$ and $BC$ are $P = \\frac{\\mathbf{a}+\\mathbf{b}}{2}$ and $Q = \\frac{\\mathbf{b}+\\mathbf{c}}{2}$. Find vector $\\vec{PQ} = Q - P$.`,
-                    type: 'mcq',
-                    options: [
-                        `$\\vec{PQ} = \\frac{\\mathbf{c} - \\mathbf{a}}{2}$`,
-                        `$\\vec{PQ} = \\frac{\\mathbf{b} - \\mathbf{a}}{2}$`,
-                        `$\\vec{PQ} = \\frac{\\mathbf{c} + \\mathbf{a}}{2}$`,
-                        `$\\vec{PQ} = \\mathbf{c} - \\mathbf{a}$`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 2: Similarly, midpoints of $CD$ and $DA$ are $R = \\frac{\\mathbf{c}+\\mathbf{d}}{2}$ and $S = \\frac{\\mathbf{d}+\\mathbf{a}}{2}$. Vector $\\vec{SR} = R - S = \\frac{\\mathbf{c} - \\mathbf{a}}{2}$. Since $\\vec{PQ} = \\vec{SR}$, what geometric conclusion follows?`,
-                    type: 'mcq',
-                    options: [
-                        `Opposite sides are equal and parallel, so PQRS is always a parallelogram`,
-                        `PQRS is always a square`,
-                        `PQRS is a trapezoid only`,
-                        `PQRS is equilateral`
-                    ],
-                    ansIndex: 0
-                }
-            ]
-        };
-    },
-
-    // =========================================================
-    // SECTION C: CIRCLE & GEOMETRIC PROOFS WITH ASYMPTOTE DIAGRAMS (6 PROOFS)
-    // =========================================================
-
-    // 15. Alternate Segment Theorem Rigorous Proof
     genProofGeomAlternateSegment() {
-        const pA = SvgBuilder.polarToCartesian(100, 270);
-        const pB = SvgBuilder.polarToCartesian(100, 140);
-        const pC = SvgBuilder.polarToCartesian(100, 40);
-        const pD = SvgBuilder.polarToCartesian(100, 90);
-        const visual = SvgBuilder.circleTemplate(`
-            ${SvgBuilder.line({x: -120, y: pA.y}, {x: 120, y: pA.y}, '#ec4899', 2)}
-            ${SvgBuilder.path([pA, pB, pC], true, '#818cf8')}
-            ${SvgBuilder.line(pA, pD, '#94a3b8', 1.5, '4,4')}
-            ${SvgBuilder.line(pB, pD, '#94a3b8', 1.5, '4,4')}
-            ${SvgBuilder.dot(pA, 'A (Tangent Point)', {x: 0, y: 15})}
-            ${SvgBuilder.dot(pB, 'B', {x: -15, y: -10})}
-            ${SvgBuilder.dot(pC, 'C', {x: 15, y: -10})}
-            ${SvgBuilder.dot(pD, 'D (Diameter)', {x: 0, y: -15})}
-        `);
+        const visual = svgCircleTheorem('alt_segment');
         return {
             type: 'multi_step',
-            isProof: true,
             topic: 'Geometry',
-            text: `Rigorous Proof of the Alternate Segment Theorem`,
+            text: `Prove the Alternate Segment Theorem: The angle between a tangent and a chord equals the angle in the alternate segment ($\\angle TAB = \\angle ACB$).`,
             visual: visual,
             steps: [
                 {
-                    prompt: `Step 1: Construct diameter $AD$ through centre $O$. Tangent line $TA$ meets radius $OA$ at what angle?`,
+                    prompt: `Step 1: Construct diameter $AD$ and join $DB$. Since $AD$ is a diameter, what is the value of $\\angle ABD$ in degrees?`,
                     type: 'short_answer',
-                    acceptableAnswers: ['90', '90°', '90 deg'],
-                    expectedAnswerGuidelines: 'Radius to tangent point is perpendicular: angle TAD = 90 deg.'
+                    acceptableAnswers: ['90', '90 degrees', '90 deg', 'pi/2']
                 },
                 {
-                    prompt: `Step 2: Since $AD$ is a diameter, angle in semicircle $\\angle ABD = 90^\\circ$. In right $\\triangle ABD$, $\\angle ADB = 90^\\circ - \\angle DAB$. Also $\\angle TAB = 90^\\circ - \\angle DAB$. Therefore $\\angle TAB = \\angle ADB$. By the Angles in Same Segment theorem, $\\angle ADB = \\angle ACB$. What is the final equality?`,
+                    prompt: `Step 2: Since radius $OA \\perp$ tangent $AT$, $\\angle TAB = 90^\\circ - \\angle DAB = \\angle ADB$. Why does $\\angle ADB = \\angle ACB$?`,
                     type: 'mcq',
                     options: [
-                        `$\\angle TAB = \\angle ACB$ (Angle between tangent and chord equals angle in alternate segment)`,
-                        `$\\angle TAB = 2\\angle ACB$`,
-                        `$\\angle TAB + \\angle ACB = 180^\\circ$`,
-                        `$\\angle TAB = 90^\\circ - \\angle ACB$`
+                        `Angles in the same segment subtended by chord AB are equal`,
+                        `Opposite angles of cyclic quadrilateral are supplementary`,
+                        `Angle at center is twice angle at circumference`,
+                        `Base angles of an isosceles triangle are equal`
                     ],
                     ansIndex: 0
                 }
@@ -545,199 +134,278 @@ export const proofGenerators = {
         };
     },
 
-    // 16. Cyclic Quad Supplementary Angles Proof
-    genProofGeomCyclicQuadSupplementary() {
-        const pA = SvgBuilder.polarToCartesian(100, 135);
-        const pB = SvgBuilder.polarToCartesian(100, 45);
-        const pC = SvgBuilder.polarToCartesian(100, 315);
-        const pD = SvgBuilder.polarToCartesian(100, 225);
-        const pO = { x: 0, y: 0 };
-        const visual = SvgBuilder.circleTemplate(`
-            ${SvgBuilder.path([pA, pB, pC, pD], true, '#818cf8')}
-            ${SvgBuilder.line(pB, pO, '#ec4899', 1.5, '3,3')}
-            ${SvgBuilder.line(pD, pO, '#ec4899', 1.5, '3,3')}
-            ${SvgBuilder.dot(pO, 'O', {x: 0, y: 15})}
-            ${SvgBuilder.dot(pA, 'A', {x: -12, y: -12})}
-            ${SvgBuilder.dot(pB, 'B', {x: 12, y: -12})}
-            ${SvgBuilder.dot(pC, 'C', {x: 12, y: 15})}
-            ${SvgBuilder.dot(pD, 'D', {x: -12, y: 15})}
-        `);
+    genProofGeomIntersectingChords() {
+        const visual = svgCircleTheorem('chords');
         return {
             type: 'multi_step',
-            isProof: true,
             topic: 'Geometry',
-            text: `Proof: Opposite Angles of a Cyclic Quadrilateral are Supplementary`,
+            text: `Prove the Intersecting Chords Theorem: If chords $AB$ and $CD$ intersect at $P$, then $PA \\cdot PB = PC \\cdot PD$.`,
             visual: visual,
             steps: [
                 {
-                    prompt: `Step 1: In cyclic quadrilateral $ABCD$, connect $B$ and $D$ to centre $O$. The minor arc $BCD$ subtends central angle $\\angle BOD = 2\\angle BAD$. The major arc $BAD$ subtends reflex central angle $\\text{reflex } \\angle BOD = 2\\angle BCD$. What is the sum of central angle and reflex central angle?`,
-                    type: 'short_answer',
-                    acceptableAnswers: ['360', '360°', '360 deg'],
-                    expectedAnswerGuidelines: 'Angles around a point sum to 360 degrees.'
+                    prompt: `Step 1: Join $AC$ and $DB$. In triangles $\\triangle PAC$ and $\\triangle PDB$, $\\angle APC = \\angle DPB$ (vertically opposite) and $\\angle PAC = \\angle PDB$. What theorem justifies $\\angle PAC = \\angle PDB$?`,
+                    type: 'mcq',
+                    options: [
+                        `Angles subtended by the same arc BC are equal`,
+                        `Alternate interior angles are equal`,
+                        `Opposite angles of cyclic quadrilateral sum to 180`,
+                        `Exterior angle equals opposite interior angle`
+                    ],
+                    ansIndex: 0
                 },
                 {
-                    prompt: `Step 2: Since $2\\angle BAD + 2\\angle BCD = 360^\\circ$, dividing by $2$ proves $\\angle BAD + \\angle BCD = ?$`,
+                    prompt: `Step 2: Since $\\triangle PAC \\sim \\triangle PDB$ by AA similarity, the ratio of sides is $\\frac{PA}{PD} = \\frac{PC}{PB}$. Cross-multiply to give $PA \\cdot PB = ?$`,
                     type: 'short_answer',
-                    acceptableAnswers: ['180', '180°', '180 deg'],
-                    expectedAnswerGuidelines: 'Opposite angles sum to 180 degrees (supplementary).'
+                    acceptableAnswers: ['PC*PD', 'PC.PD', 'PCPD', 'PD*PC', 'PD.PC']
                 }
             ]
         };
     },
 
-    // 17. Intersecting Chords Theorem Similarity Proof
-    genProofGeomIntersectingChordsProof() {
-        const visual = SvgBuilder.circleTemplate(`
-            ${SvgBuilder.line({x: -80, y: -30}, {x: 70, y: 40}, '#818cf8', 2)}
-            ${SvgBuilder.line({x: -60, y: 50}, {x: 50, y: -60}, '#818cf8', 2)}
-            ${SvgBuilder.line({x: -80, y: -30}, {x: -60, y: 50}, '#ec4899', 1.5, '3,3')}
-            ${SvgBuilder.line({x: 70, y: 40}, {x: 50, y: -60}, '#ec4899', 1.5, '3,3')}
-            ${SvgBuilder.dot({x: 0, y: 0}, 'P', {x: 0, y: -10}, '#f8fafc')}
-            ${SvgBuilder.dot({x: -80, y: -30}, 'A', {x: -12, y: 0})}
-            ${SvgBuilder.dot({x: 70, y: 40}, 'B', {x: 12, y: 0})}
-            ${SvgBuilder.dot({x: -60, y: 50}, 'C', {x: -12, y: 10})}
-            ${SvgBuilder.dot({x: 50, y: -60}, 'D', {x: 12, y: -10})}
-        `);
+    // =========================================================
+    // SECTION B: SINGLE-STEP LONG-ANSWER PROOFS (Gemini AI Evaluated)
+    // =========================================================
+    genLongProofTrigTripleAngleCos() {
         return {
-            type: 'multi_step',
+            type: 'long_answer_proof',
             isProof: true,
-            topic: 'Geometry',
-            text: `Proof of Intersecting Chords Theorem ($PA \\cdot PB = PC \\cdot PD$)`,
-            visual: visual,
-            steps: [
-                {
-                    prompt: `Step 1: Consider chords $AB$ and $CD$ intersecting at interior point $P$. Connect $AC$ and $DB$. In $\\triangle PAC$ and $\\triangle PDB$, $\\angle APC = \\angle DPB$ (vertically opposite). Why is $\\angle PAC = \\angle PDB$?`,
-                    type: 'mcq',
-                    options: [
-                        `Angles subtended by the same arc BC in the same segment are equal`,
-                        `Alternate interior angles`,
-                        `Corresponding angles on parallel chords`,
-                        `Complementary angles`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 2: By AA similarity, $\\triangle PAC \\sim \\triangle PDB$. Equating corresponding side ratios $\\frac{PA}{PD} = \\frac{PC}{PB}$. Cross-multiplying gives what fundamental product?`,
-                    type: 'short_answer',
-                    acceptableAnswers: ['PA*PB=PC*PD', 'PA.PB=PC.PD', 'PA PB = PC PD'],
-                    expectedAnswerGuidelines: 'PA * PB = PC * PD (Intersecting Chords Theorem)'
-                }
-            ]
+            isLongProof: true,
+            topic: 'Trigonometry (Spec)',
+            text: `Prove rigorously that for all real $x$:\n\\[\\cos(3x) = 4\\cos^3(x) - 3\\cos(x)\\]`,
+            expectedAnswerGuidelines: `Student must split cos(3x) into cos(2x+x), apply compound angle expansion cos(2x)cos(x) - sin(2x)sin(x), substitute double-angle formulas cos(2x)=2cos^2(x)-1 and sin(2x)=2sin(x)cos(x), replace sin^2(x) with 1-cos^2(x), and simplify algebraically to 4cos^3(x)-3cos(x).`
         };
     },
 
-    // 18. Tangent-Secant Power of Point Proof
-    genProofGeomTangentSecantProof() {
-        const visual = SvgBuilder.circleTemplate(`
-            ${SvgBuilder.line({x: -110, y: 60}, {x: 0, y: -100}, '#ec4899', 2)}
-            ${SvgBuilder.line({x: -110, y: 60}, {x: 95, y: 30}, '#818cf8', 2)}
-            ${SvgBuilder.line({x: 0, y: -100}, {x: -30, y: 48}, '#94a3b8', 1.5, '3,3')}
-            ${SvgBuilder.line({x: 0, y: -100}, {x: 95, y: 30}, '#94a3b8', 1.5, '3,3')}
-            ${SvgBuilder.dot({x: -110, y: 60}, 'P', {x: -12, y: 0})}
-            ${SvgBuilder.dot({x: 0, y: -100}, 'T', {x: 0, y: -12}, '#ec4899')}
-            ${SvgBuilder.dot({x: -30, y: 48}, 'A', {x: 0, y: 15})}
-            ${SvgBuilder.dot({x: 95, y: 30}, 'B', {x: 12, y: 0})}
-        `);
+    genLongProofTrigHalfTangent() {
         return {
-            type: 'multi_step',
+            type: 'long_answer_proof',
             isProof: true,
-            topic: 'Geometry',
-            text: `Proof of Tangent-Secant Theorem ($PT^2 = PA \\cdot PB$)`,
-            visual: visual,
-            steps: [
-                {
-                    prompt: `Step 1: From external point $P$, tangent $PT$ touches the circle at $T$ and secant $PAB$ cuts the circle at $A$ and $B$. In $\\triangle PTA$ and $\\triangle PBT$, $\\angle P$ is shared. By the Alternate Segment Theorem, $\\angle PTA = \\angle PBT$. Therefore:`,
-                    type: 'mcq',
-                    options: [
-                        `$\\triangle PTA \\sim \\triangle PBT$ (by AA similarity)`,
-                        `$\\triangle PTA \\cong \\triangle PBT$ (congruent)`,
-                        `$PT = PA$`,
-                        `$\\angle PAT = 90^\\circ$`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 2: From the similarity ratio $\\frac{PT}{PB} = \\frac{PA}{PT}$, cross-multiplying yields:`,
-                    type: 'short_answer',
-                    acceptableAnswers: ['PT^2=PA*PB', 'PT^2 = PA . PB', 'PT^2=PA PB'],
-                    expectedAnswerGuidelines: 'PT^2 = PA * PB'
-                }
-            ]
+            isLongProof: true,
+            topic: 'Trigonometry (Spec)',
+            text: `Prove rigorously that for all $x \\neq \\frac{\\pi}{2} + k\\pi$ and $x \\neq \\pi + 2k\\pi$:\n\\[\\frac{\\sin(2x)}{1 + \\cos(2x)} = \\tan(x)\\]`,
+            expectedAnswerGuidelines: `Student must express sin(2x) as 2sin(x)cos(x), substitute cos(2x) as 2cos^2(x)-1 so that 1+cos(2x) = 2cos^2(x), cancel common factor 2cos(x), and arrive at sin(x)/cos(x) = tan(x).`
         };
     },
 
-    // 19. Ptolemy's Theorem for Cyclic Quadrilaterals
-    genProofGeomPtolemy() {
+    genLongProofTrigSumToProduct() {
         return {
-            type: 'multi_step',
+            type: 'long_answer_proof',
             isProof: true,
-            topic: 'Geometry',
-            text: `Proof of Ptolemy's Theorem for Cyclic Quadrilateral $ABCD$`,
-            steps: [
-                {
-                    prompt: `Step 1: For a convex cyclic quadrilateral $ABCD$ with diagonals $AC$ and $BD$, construct point $K$ on diagonal $AC$ such that $\\angle ABK = \\angle DBC$. Using similar triangles $\\triangle ABK \\sim \\triangle DBC$, what is the relation for $AK \\cdot BD$?`,
-                    type: 'mcq',
-                    options: [
-                        `$AK \\cdot BD = AB \\cdot CD$`,
-                        `$AK \\cdot BD = BC \\cdot AD$`,
-                        `$AK \\cdot BD = AC^2$`,
-                        `$AK \\cdot BD = AB + CD$`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 2: Similarly, $\\triangle KBC \\sim \\triangle ABD$ gives $KC \\cdot BD = BC \\cdot AD$. Adding both equations $(AK + KC) \\cdot BD = AC \\cdot BD$. What is Ptolemy's final identity?`,
-                    type: 'mcq',
-                    options: [
-                        `$AC \\cdot BD = AB \\cdot CD + BC \\cdot AD$ (Product of diagonals equals sum of products of opposite sides)`,
-                        `$AC \\cdot BD = AB \\cdot BC + CD \\cdot DA$`,
-                        `$AC^2 + BD^2 = AB^2 + BC^2 + CD^2 + DA^2$`,
-                        `$AC \\cdot BD = \\frac{1}{2}(AB \\cdot CD)$`
-                    ],
-                    ansIndex: 0
-                }
-            ]
+            isLongProof: true,
+            topic: 'Trigonometry (Spec)',
+            text: `Prove rigorously the sum-to-product identity:\n\\[\\sin(A) + \\sin(B) = 2\\sin\\left(\\frac{A+B}{2}\\right)\\cos\\left(\\frac{A-B}{2}\\right)\\]`,
+            expectedAnswerGuidelines: `Student should let u=(A+B)/2 and v=(A-B)/2, write A=u+v and B=u-v, expand sin(u+v)+sin(u-v) using compound angle formulas (sin u cos v + cos u sin v + sin u cos v - cos u sin v = 2 sin u cos v), and substitute back u and v.`
         };
     },
 
-    // 20. Simson's Line Collinearity Proof
-    genProofGeomSimsonsLine() {
-        const visual = SvgBuilder.circleTemplate(`
-            ${SvgBuilder.path([{x: -70, y: 50}, {x: 70, y: 50}, {x: 10, y: -70}], true, '#64748b')}
-            ${SvgBuilder.dot({x: -70, y: 50}, 'A')}
-            ${SvgBuilder.dot({x: 70, y: 50}, 'B')}
-            ${SvgBuilder.dot({x: 10, y: -70}, 'C')}
-            ${SvgBuilder.dot({x: -50, y: -55}, 'P (Circumcircle)', {x: -15, y: -10}, '#ec4899')}
-            ${SvgBuilder.line({x: -80, y: -20}, {x: 40, y: 55}, '#ec4899', 2, '2,2')}
-        `);
+    genLongProofTrigArcSinArcCos() {
         return {
-            type: 'multi_step',
+            type: 'long_answer_proof',
             isProof: true,
-            topic: 'Geometry',
-            text: `Proof of Simson's Line: Projections of Circumcircle Point onto Triangle Sides are Collinear`,
+            isLongProof: true,
+            topic: 'Trigonometry (Spec)',
+            text: `Prove that for all $x \\in [-1, 1]$:\n\\[\\arcsin(x) + \\arccos(x) = \\frac{\\pi}{2}\\]`,
+            expectedAnswerGuidelines: `Student must let theta = arcsin(x) with theta in [-pi/2, pi/2], state x = sin(theta) = cos(pi/2 - theta), show pi/2 - theta lies in [0, pi] (the principal domain of arccos), hence arccos(x) = pi/2 - theta = pi/2 - arcsin(x), concluding arcsin(x) + arccos(x) = pi/2.`
+        };
+    },
+
+    genLongProofTrigRFormula() {
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Trigonometry (Spec)',
+            text: `Show that any linear combination $a\\cos(x) + b\\sin(x)$ (with $a, b > 0$) can be written in the form $R\\cos(x - \\alpha)$, and determine exact formulas for $R$ and $\\alpha$.`,
+            expectedAnswerGuidelines: `Student must expand R cos(x - alpha) = R cos x cos alpha + R sin x sin alpha, equate coefficients to get R cos alpha = a and R sin alpha = b, square and sum to get R^2(cos^2 alpha + sin^2 alpha) = a^2 + b^2 => R = sqrt(a^2 + b^2), and divide to obtain tan alpha = b/a => alpha = arctan(b/a).`
+        };
+    },
+
+    genLongProofVectorApollonius() {
+        const visual = svgVectorProofDiagram('apollonius');
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Vectors in the Plane',
+            text: `Prove Apollonius' Theorem using vectors: For any triangle $\\triangle ABC$ with median $AD$ to the midpoint $D$ of $BC$,\n\\[|AB|^2 + |AC|^2 = 2|AD|^2 + 2|BD|^2\\]`,
             visual: visual,
-            steps: [
-                {
-                    prompt: `Step 1: Let $P$ lie on the circumcircle of $\\triangle ABC$. Drop perpendiculars from $P$ to the three sides (or extensions), meeting them at $X, Y, Z$. Because each projection angle is $90^\\circ$, four cyclic quadrilaterals are formed around $P$. What connects the perpendicular feet?`,
-                    type: 'mcq',
-                    options: [
-                        `The three feet X, Y, Z lie on a single straight line called the Simson line`,
-                        `The three feet form an equilateral triangle`,
-                        `The three feet are vertices of a cyclic quadrilateral`,
-                        `The three feet concur at the circumcentre`
-                    ],
-                    ansIndex: 0
-                },
-                {
-                    prompt: `Step 2: If $P$ did not lie on the circumcircle, would the three feet $X, Y, Z$ still be collinear?`,
-                    type: 'mcq',
-                    options: [
-                        `No, collinearity holds if and only if P lies on the circumcircle`,
-                        `Yes, they are collinear for any arbitrary point P`
-                    ],
-                    ansIndex: 0
-                }
-            ]
+            expectedAnswerGuidelines: `Student sets origin at midpoint D (or uses position vectors relative to D), setting d=0 so position vector of C is -b (where b is position of B). Then AB = b - a and AC = -b - a. Expanding |AB|^2 + |AC|^2 = (b - a).(b - a) + (-b - a).(-b - a) = (b.b - 2a.b + a.a) + (b.b + 2a.b + a.a) = 2|a|^2 + 2|b|^2 = 2|AD|^2 + 2|BD|^2.`
+        };
+    },
+
+    genLongProofVectorCentroid() {
+        const visual = svgVectorProofDiagram('centroid');
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Vectors in the Plane',
+            text: `Prove using vector methods that the three medians of any triangle $\\triangle ABC$ concur at a point $G$, and find the position vector $\\mathbf{g}$ in terms of $\\mathbf{a}, \\mathbf{b}, \\mathbf{c}$.`,
+            visual: visual,
+            expectedAnswerGuidelines: `Student determines midpoint D of BC as d=(b+c)/2. The point G dividing AD in ratio 2:1 has position vector g = (1*a + 2*d)/(1+2) = (a + 2*(b+c)/2)/3 = (a+b+c)/3. By symmetry, dividing the other two medians BE and CF in ratio 2:1 yields the exact same position vector (a+b+c)/3, proving all three medians are concurrent at G.`
+        };
+    },
+
+    genLongProofVectorPythagoras() {
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Vectors in the Plane',
+            text: `Use vector dot products to prove the Pythagorean Theorem for vectors $\\mathbf{u}$ and $\\mathbf{v}$ that are perpendicular ($\\mathbf{u} \\cdot \\mathbf{v} = 0$).`,
+            expectedAnswerGuidelines: `Student calculates the hypotenuse vector magnitude squared |u + v|^2 = (u + v).(u + v) = u.u + 2(u.v) + v.v. Since u and v are perpendicular, u.v = 0, so |u + v|^2 = |u|^2 + |v|^2.`
+        };
+    },
+
+    genLongProofVectorRhombusDiagonals() {
+        const visual = svgVectorProofDiagram('rhombus');
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Vectors in the Plane',
+            text: `Prove using vector dot products that the diagonals of any rhombus are perpendicular to each other.`,
+            visual: visual,
+            expectedAnswerGuidelines: `Let adjacent sides be vectors u and v with equal lengths |u| = |v|. The two diagonals are represented by u + v and u - v (or v - u). Taking their dot product: (u + v).(u - v) = u.u - u.v + v.u - v.v = |u|^2 - |v|^2. Since |u| = |v|, this equals 0, proving the diagonals are perpendicular.`
+        };
+    },
+
+    genLongProofVectorCauchySchwarz() {
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Vectors in the Plane',
+            text: `Prove the Cauchy-Schwarz inequality for any two vectors $\\mathbf{u}, \\mathbf{v} \\in \\mathbb{R}^2$:\n\\[(\\mathbf{u} \\cdot \\mathbf{v})^2 \\le |\\mathbf{u}|^2 |\\mathbf{v}|^2\\]\nand state the condition for equality.`,
+            expectedAnswerGuidelines: `Student writes u.v = |u||v|cos(theta). Squaring gives (u.v)^2 = |u|^2|v|^2 cos^2(theta). Since cos^2(theta) <= 1 for all real theta, (u.v)^2 <= |u|^2|v|^2. Equality holds if and only if cos^2(theta) = 1 (i.e. theta = 0 or pi), meaning u and v are linearly dependent / collinear (or one is the zero vector).`
+        };
+    },
+
+    genLongProofVectorThalesSemicircle() {
+        const visual = svgCircleTheorem('alt_segment');
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Vectors in the Plane',
+            text: `Use vector methods to prove Thales' Theorem: The angle subtended by a diameter at any point on the circumference of a circle is a right angle ($90^\\circ$).`,
+            visual: visual,
+            expectedAnswerGuidelines: `Let center of circle be origin O. Diameter AB has position vectors a and -a with |a|=r. Let P on the circumference have position vector p with |p|=r. Vector PA = a - p and PB = -a - p = -(a + p). Compute dot product PA.PB = (a - p).(-(a + p)) = -(a.a - p.p) = -(|a|^2 - |p|^2) = -(r^2 - r^2) = 0. Therefore PA is perpendicular to PB, so angle APB = 90 degrees.`
+        };
+    },
+
+    genLongProofVectorVarignon() {
+        const visual = svgVectorProofDiagram('quad');
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Vectors in the Plane',
+            text: `Prove Varignon's Theorem using vectors: The midpoints of the sides of any planar quadrilateral $ABCD$ form a parallelogram.`,
+            visual: visual,
+            expectedAnswerGuidelines: `Let vertices be a, b, c, d. Midpoints of AB, BC, CD, DA are P=(a+b)/2, Q=(b+c)/2, R=(c+d)/2, S=(d+a)/2. Vector PQ = Q - P = (b+c)/2 - (a+b)/2 = (c-a)/2. Vector SR = R - S = (c+d)/2 - (d+a)/2 = (c-a)/2. Since PQ = SR, opposite sides are equal in length and parallel, proving PQRS is a parallelogram.`
+        };
+    },
+
+    genLongProofGeomAlternateSegment() {
+        const visual = svgCircleTheorem('alt_segment');
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Geometry',
+            text: `Give a complete and rigorous geometric proof of the Alternate Segment Theorem: The angle between a tangent to a circle and a chord through the point of contact is equal to the angle subtended by the chord in the alternate segment.`,
+            visual: visual,
+            expectedAnswerGuidelines: `Student draws tangent TAB at A and chord AC. Constructs diameter AD and joins DC. States radius OA perp tangent TAB, so angle TAB = 90 - angle CAD. Angle ACD = 90 (angle in semicircle). In triangle ACD, angle ADC = 90 - angle CAD = angle TAB. But angle ADC = angle ABC (angles in same segment subtended by arc AC). Hence angle TAB = angle ABC.`
+        };
+    },
+
+    genLongProofGeomCyclicQuadSupplementary() {
+        const visual = svgCircleTheorem('cyclic_quad');
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Geometry',
+            text: `Prove rigorously that the opposite angles of any cyclic quadrilateral $ABCD$ sum to $180^\\circ$.`,
+            visual: visual,
+            expectedAnswerGuidelines: `Let O be center of circumcircle. Join OB and OD. Angle at center BOD (reflex) = 2 * angle BCD. Angle at center BOD (non-reflex) = 2 * angle BAD. Sum of angles around point O is 360, so 2*angle BAD + 2*angle BCD = 360 => angle BAD + angle BCD = 180 degrees. By angle sum of quadrilateral, the other pair also sums to 180.`
+        };
+    },
+
+    genLongProofGeomIntersectingChords() {
+        const visual = svgCircleTheorem('chords');
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Geometry',
+            text: `Prove the Intersecting Chords Theorem: If two chords $AB$ and $CD$ of a circle intersect at an internal point $P$, then $PA \\cdot PB = PC \\cdot PD$.`,
+            visual: visual,
+            expectedAnswerGuidelines: `Join AC and DB. In triangles PAC and PDB: angle APC = angle DPB (vertically opposite angles), angle PAC = angle PDB (angles in same segment subtended by arc BC). By AA similarity, triangle PAC is similar to triangle PDB. Therefore corresponding sides are in proportion: PA/PD = PC/PB. Cross-multiplying yields PA*PB = PC*PD.`
+        };
+    },
+
+    genLongProofGeomTangentSecant() {
+        const visual = svgCircleTheorem('tangent_secant');
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Geometry',
+            text: `Prove the Tangent-Secant Theorem (Power of a Point): If from an external point $P$, a tangent $PT$ touches the circle at $T$ and a secant line passes through circle points $A$ and $B$, then $PT^2 = PA \\cdot PB$.`,
+            visual: visual,
+            expectedAnswerGuidelines: `Join TA and TB. Consider triangles PTA and PBT: angle P is common, angle PTA = angle PBT (Alternate Segment Theorem). Thus triangle PTA is similar to triangle PBT by AA similarity. Therefore PT/PB = PA/PT. Cross-multiplying gives PT^2 = PA*PB.`
+        };
+    },
+
+    genLongProofGeomPtolemy() {
+        const visual = svgCircleTheorem('ptolemy');
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Geometry',
+            text: `State and prove Ptolemy's Theorem for a cyclic quadrilateral $ABCD$ with vertices in order:\n\\[AC \\cdot BD = AB \\cdot CD + BC \\cdot AD\\]`,
+            visual: visual,
+            expectedAnswerGuidelines: `Construct point K on diagonal BD such that angle DAK = angle CAB. Since angle ADK = angle ACB (angles in same segment), triangle ADK is similar to triangle ACB. Thus AK/AB = AD/AC => AK*AC = AB*AD... and similarly for triangle ABK and triangle ACD, BK*AC = BC*AD. Adding both equations gives (AK + BK)*AC = BD*AC = AB*CD + BC*AD.`
+        };
+    },
+
+    genLongProofGeomAngleAtCenter() {
+        const visual = svgCircleAngles(50);
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Geometry',
+            text: `Prove that the angle subtended by an arc at the center of a circle is twice the angle subtended by the same arc at any point on the circumference.`,
+            visual: visual,
+            expectedAnswerGuidelines: `Let arc AB subtend angle AOB at center O and angle APB at circumference point P. Draw diameter POQ. In triangle OAP, OA=OP (radii), so triangle OAP is isosceles and angle OPA = angle OAP. Exterior angle AOQ = angle OPA + angle OAP = 2*angle OPA. Similarly in triangle OBP, exterior angle BOQ = 2*angle OPB. Adding yields angle AOB = angle AOQ + angle BOQ = 2(angle OPA + angle OPB) = 2*angle APB.`
+        };
+    },
+
+    genLongProofGeomSimsonsLine() {
+        const visual = svgCircleTheorem('simson');
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Geometry',
+            text: `Prove Simson's Theorem: The feet of the perpendiculars from any point $P$ on the circumcircle of triangle $\\triangle ABC$ to the three sides (or their extensions) are collinear.`,
+            visual: visual,
+            expectedAnswerGuidelines: `Let projections of P onto BC, CA, AB be X, Y, Z. Construct cyclic quadrilaterals: P, Y, Z, A lie on circle with diameter PA (right angles at Y, Z). P, X, Y, C lie on circle with diameter PC. Using cyclic quad angles, angle PZY = angle PAY = angle PAC = 180 - angle PBC = angle PBX = angle PZX. This proves angle PZY = angle PZX, hence X, Y, Z lie on a single straight line (Simson's Line).`
+        };
+    },
+
+    genLongProofGeomTangentsFromExternalPoint() {
+        return {
+            type: 'long_answer_proof',
+            isProof: true,
+            isLongProof: true,
+            topic: 'Geometry',
+            text: `Prove that the two tangents drawn to a circle from an external point $P$ are equal in length and subtend equal angles at the center.`,
+            expectedAnswerGuidelines: `Let tangents touch circle at T1 and T2 with center O. In triangles OPT1 and OPT2: angle OT1P = angle OT2P = 90 (tangent perp radius), OT1 = OT2 (radii), OP is common hypotenuse. By RHS congruence, triangle OPT1 is congruent to triangle OPT2. Thus PT1 = PT2 (tangents equal in length) and angle T1OP = angle T2OP (subtend equal angles at center).`
         };
     }
 };
