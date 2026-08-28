@@ -15,10 +15,15 @@ import {
 } from './ui.js';
 import { setGeminiApiKey, getGeminiApiKey, evaluateProofStepWithGemini } from './gemini.js';
 
-// Application State Object
+// Application State Object (Initialized with active guest user by default)
+const initialProfile = loadLocalProfile();
 const state = {
-    currentUser: null,
-    userProfile: loadLocalProfile(),
+    userProfile: initialProfile,
+    currentUser: {
+        uid: initialProfile.uid,
+        displayName: initialProfile.displayName,
+        isGuest: true
+    },
     currentRoomId: null,
     roomUnsubscribe: null,
     roomData: null,
@@ -43,38 +48,22 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('nav-brand-logo')?.addEventListener('click', () => showScreen('landing'));
 document.getElementById('nav-btn-landing')?.addEventListener('click', () => showScreen('landing'));
 document.getElementById('nav-btn-lobby')?.addEventListener('click', () => {
-    if (!state.currentUser) {
-        showScreen('login');
-    } else {
-        showScreen('lobby');
-        loadPublicRooms();
-    }
+    showScreen('lobby');
+    loadPublicRooms();
 });
 document.getElementById('nav-btn-profile')?.addEventListener('click', () => {
-    if (!state.currentUser) {
-        showScreen('login');
-    } else {
-        renderProfileDashboard(state.userProfile, state.currentUser);
-        showScreen('profile');
-    }
+    renderProfileDashboard(state.userProfile, state.currentUser);
+    showScreen('profile');
 });
 
 // Landing Page Hero CTA
 document.getElementById('landing-btn-start-playing')?.addEventListener('click', () => {
-    if (!state.currentUser) {
-        showScreen('login');
-    } else {
-        showScreen('lobby');
-        loadPublicRooms();
-    }
+    showScreen('lobby');
+    loadPublicRooms();
 });
 document.getElementById('landing-btn-view-profile')?.addEventListener('click', () => {
-    if (!state.currentUser) {
-        showScreen('login');
-    } else {
-        renderProfileDashboard(state.userProfile, state.currentUser);
-        showScreen('profile');
-    }
+    renderProfileDashboard(state.userProfile, state.currentUser);
+    showScreen('profile');
 });
 
 // ---------------------------------------------------------
@@ -82,9 +71,9 @@ document.getElementById('landing-btn-view-profile')?.addEventListener('click', (
 // ---------------------------------------------------------
 document.getElementById('btn-google-login')?.addEventListener('click', async () => {
     if (!isFirebaseAvailable || !auth || !provider) {
-        showToast("Firebase Auth not configured. Continuing in local guest mode.", true);
+        showToast("Firebase Auth not configured. Operating in local guest mode.", true);
         state.userProfile.isGuest = true;
-        state.userProfile.displayName = "Google User (Offline)";
+        state.userProfile.displayName = state.userProfile.displayName || "Google User";
         saveLocalProfile(state.userProfile);
         state.currentUser = { uid: state.userProfile.uid, displayName: state.userProfile.displayName, isGuest: true };
         updateNavbarProfileBadge(state.userProfile);
@@ -131,11 +120,11 @@ document.getElementById('btn-google-login')?.addEventListener('click', async () 
     } catch (err) {
         console.error("Google Auth error:", err);
         if (err.code === 'auth/unauthorized-domain') {
-            showToast("This domain is not authorized in Firebase Console. Continuing as guest.", true);
+            showToast("Domain not authorized in Firebase Console. Continuing as guest.", true);
         } else if (err.code === 'auth/popup-blocked') {
-            showToast("Sign-in popup was blocked. Please allow popups.", true);
+            showToast("Popup blocked by browser. Please allow popups.", true);
         } else {
-            showToast("Sign in unavailable: " + (err.message || 'Please use guest login.'), true);
+            showToast("Sign in unavailable: " + (err.message || 'Continuing as guest.'), true);
         }
     }
 });
@@ -163,8 +152,12 @@ document.getElementById('profile-btn-logout')?.addEventListener('click', async (
     if (isFirebaseAvailable && auth && !state.currentUser?.isGuest) {
         await signOut(auth);
     }
-    state.currentUser = null;
     state.userProfile = loadLocalProfile();
+    state.currentUser = {
+        uid: state.userProfile.uid,
+        displayName: state.userProfile.displayName,
+        isGuest: true
+    };
     updateNavbarProfileBadge(state.userProfile);
     showToast("Signed out.");
     showScreen('landing');
@@ -180,7 +173,7 @@ document.getElementById('btn-save-gemini-key')?.addEventListener('click', () => 
     const key = document.getElementById('input-gemini-key')?.value.trim();
     setGeminiApiKey(key);
     if (key) {
-        showToast("\u2705 Gemini 3.7 Flash AI Proof Evaluator Activated!");
+        showToast("✅ Gemini 3.7 Flash Proof Grader Activated!");
     } else {
         showToast("Gemini API Key removed. Proofs will require a key to host or use offline matching.");
     }
@@ -200,7 +193,8 @@ function setupAvatarPicker() {
         btn.onclick = async () => {
             state.userProfile.avatar = emoji;
             saveLocalProfile(state.userProfile);
-            document.getElementById('profile-avatar-display').innerText = emoji;
+            const avatarDisplay = document.getElementById('profile-avatar-display');
+            if (avatarDisplay) avatarDisplay.innerText = emoji;
             updateNavbarProfileBadge(state.userProfile);
             document.getElementById('avatar-picker-container')?.classList.add('hidden');
             showToast(`Avatar updated to ${emoji}`);
@@ -255,6 +249,15 @@ function setupLobbyControls() {
 
     // Create Room
     document.getElementById('btn-create-room')?.addEventListener('click', async () => {
+        // Ensure valid current user
+        if (!state.currentUser || !state.currentUser.uid) {
+            state.currentUser = {
+                uid: state.userProfile.uid,
+                displayName: state.userProfile.displayName,
+                isGuest: true
+            };
+        }
+
         const checkedTopics = Array.from(document.querySelectorAll('.topic-cb:checked')).map(cb => cb.value);
         if (checkedTopics.length === 0) {
             showToast("Please select at least one topic for your lobby!", true);
@@ -270,7 +273,7 @@ function setupLobbyControls() {
         // Host API Key requirement rule: only required if Proofs are selected!
         const apiKey = getGeminiApiKey();
         if (formats.proofs && !apiKey) {
-            showToast("\u26a0\ufe0f Gemini API Key required to host Rigorous Proofs! Set key in Profile or uncheck 'Rigorous Proofs' to host without key.", true);
+            showToast("⚠️ Gemini API Key required to host Rigorous Proofs! Set key in Profile or uncheck 'Rigorous Long Proofs' to host without key.", true);
             return;
         }
 
@@ -298,8 +301,13 @@ function setupLobbyControls() {
             createdAt: Date.now()
         };
 
-        await saveRoomToDB(roomId, initialRoom);
-        enterRoom(roomId);
+        try {
+            await saveRoomToDB(roomId, initialRoom);
+            enterRoom(roomId);
+        } catch (e) {
+            console.error("Failed to create room:", e);
+            showToast("Room creation error: " + e.message, true);
+        }
     });
 
     // Join by PIN
@@ -335,17 +343,20 @@ function setupLobbyControls() {
         state.currentRoomId = null;
         const questions = questionDB.generateMatchSet(activeTopics, 40, formats);
 
-        document.getElementById('live-progress-bars-container').innerHTML = `
-            <div class="space-y-1">
-                <div class="flex justify-between text-xs">
-                    <span class="font-bold text-slate-200">${state.userProfile.avatar} ${state.userProfile.displayName} (Solo)</span>
-                    <span class="font-mono text-indigo-400 font-bold" id="solo-live-score">0 / ${selectedTargetScore}</span>
+        const progressContainer = document.getElementById('live-progress-bars-container');
+        if (progressContainer) {
+            progressContainer.innerHTML = `
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="font-bold text-slate-200">${state.userProfile.avatar} ${state.userProfile.displayName} (Solo)</span>
+                        <span class="font-mono text-indigo-400 font-bold" id="solo-live-score">0 / ${selectedTargetScore}</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div id="solo-live-bar" class="h-full bg-indigo-500 transition-all duration-300" style="width: 0%;"></div>
+                    </div>
                 </div>
-                <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div id="solo-live-bar" class="h-full bg-indigo-500 transition-all duration-300" style="width: 0%;"></div>
-                </div>
-            </div>
-        `;
+            `;
+        }
 
         game.startMatch({
             questions: questions,
@@ -355,11 +366,14 @@ function setupLobbyControls() {
         });
     });
 
-    // Short Answer Submissions
+    // Submissions
     document.getElementById('btn-submit-short-ans')?.addEventListener('click', () => game.submitShortAnswer());
     document.getElementById('short-answer-input')?.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') game.submitShortAnswer();
     });
+
+    // Long Proof Submission
+    document.getElementById('btn-submit-long-proof')?.addEventListener('click', () => game.submitLongAnswerProof());
 
     // Rematch & Results
     document.getElementById('results-btn-rematch')?.addEventListener('click', () => {
@@ -374,7 +388,7 @@ function setupLobbyControls() {
     // Cloud Sync Button in Header
     document.getElementById('nav-btn-sync-cloud')?.addEventListener('click', async () => {
         if (!isFirebaseAvailable || !db) {
-            showToast("Firebase not connected. Operating in local storage mode.");
+            showToast("Operating in local storage mode.");
             return;
         }
         try {
@@ -397,7 +411,7 @@ function setupLobbyControls() {
                 }));
             }
             await Promise.all(promises);
-            showToast("\u2705 Cloud sync completed successfully!");
+            showToast("✅ Cloud sync completed successfully!");
         } catch(e) {
             showToast("Sync failed: " + e.message, true);
         }
@@ -409,6 +423,13 @@ function setupLobbyControls() {
 // ---------------------------------------------------------
 async function joinRoom(roomId) {
     state.currentRoomId = roomId;
+    if (!state.currentUser || !state.currentUser.uid) {
+        state.currentUser = {
+            uid: state.userProfile.uid,
+            displayName: state.userProfile.displayName,
+            isGuest: true
+        };
+    }
     await updateRoomInDB(roomId, {
         [`players.${state.currentUser.uid}`]: {
             displayName: state.userProfile.displayName,
@@ -430,15 +451,16 @@ function enterRoom(roomId) {
         handleRoomUpdate(data);
     });
 
-    document.getElementById('waiting-room-title').innerText = `ROOM #${roomId}`;
-    showScreen('waiting');
+    const waitingTitle = document.getElementById('waiting-room-title');
+    if (waitingTitle) waitingTitle.innerText = `ROOM #${roomId}`;
+    showScreen('room-waiting');
 }
 
 async function handleRoomUpdate(data) {
     if (!data) return;
 
     // HOST-DELEGATED QUERY PROCESSING LOOP
-    // If this client is the room host, process any pending proof evaluation tickets from other players
+    // If this client is the room host, evaluate pending long-proof evaluation tickets from other players
     const isHost = data.hostUid === state.currentUser?.uid;
     if (isHost && data.pendingQueries) {
         const queryEntries = Object.entries(data.pendingQueries);
@@ -449,8 +471,7 @@ async function handleRoomUpdate(data) {
                     problemContext: query.problemContext,
                     stepPrompt: query.stepPrompt,
                     studentAnswer: query.studentAnswer,
-                    expectedAnswerGuidelines: query.expectedAnswerGuidelines,
-                    acceptableAnswers: query.acceptableAnswers
+                    expectedAnswerGuidelines: query.expectedAnswerGuidelines
                 }).then(async (evalResult) => {
                     await resolveProofQueryInRoom(data.id, queryId, evalResult);
                     state.processingQueryIds.delete(queryId);
@@ -462,26 +483,31 @@ async function handleRoomUpdate(data) {
     }
 
     const players = Object.values(data.players || {});
-    document.getElementById('waiting-player-count').innerText = players.length;
-    document.getElementById('waiting-target-score').innerText = `${data.settings?.targetScore || 10} Pts`;
+    const playerCount = document.getElementById('waiting-player-count');
+    if (playerCount) playerCount.innerText = players.length;
+
+    const targetScore = document.getElementById('waiting-target-score');
+    if (targetScore) targetScore.innerText = `${data.settings?.targetScore || 10} Pts`;
 
     const playerListEl = document.getElementById('waiting-players-list');
-    playerListEl.innerHTML = '';
-    players.forEach(p => {
-        const item = document.createElement('div');
-        item.className = "flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800";
-        item.innerHTML = `
-            <div class="flex items-center space-x-3">
-                <span class="text-xl">${p.avatar || '\ud83e\uddee'}</span>
-                <div>
-                    <span class="text-xs font-bold text-white">${p.displayName}</span>
-                    ${p.isHost ? '<span class="ml-2 text-[10px] font-bold text-amber-400 uppercase bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">Host</span>' : ''}
+    if (playerListEl) {
+        playerListEl.innerHTML = '';
+        players.forEach(p => {
+            const item = document.createElement('div');
+            item.className = "flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800";
+            item.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <span class="text-xl">${p.avatar || '🧮'}</span>
+                    <div>
+                        <span class="text-xs font-bold text-white">${p.displayName}</span>
+                        ${p.isHost ? '<span class="ml-2 text-[10px] font-bold text-amber-400 uppercase bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">Host</span>' : ''}
+                    </div>
                 </div>
-            </div>
-            <span class="font-mono text-xs text-indigo-400 font-bold">${p.elo || 1200} ELO</span>
-        `;
-        playerListEl.appendChild(item);
-    });
+                <span class="font-mono text-xs text-indigo-400 font-bold">${p.elo || 1200} ELO</span>
+            `;
+            playerListEl.appendChild(item);
+        });
+    }
 
     const startBtn = document.getElementById('btn-start-game');
     if (startBtn) startBtn.style.display = isHost ? 'flex' : 'none';
@@ -497,25 +523,27 @@ async function handleRoomUpdate(data) {
 
     if (data.status === 'in_game' && !document.getElementById('screen-game')?.classList.contains('hidden')) {
         const container = document.getElementById('live-progress-bars-container');
-        container.innerHTML = '';
-        const sorted = Object.values(data.players || {}).sort((a, b) => b.score - a.score);
-        sorted.forEach(p => {
-            const pct = Math.min(100, Math.round((p.score / (data.settings?.targetScore || 10)) * 100));
-            const isMe = p.displayName === state.userProfile.displayName;
+        if (container) {
+            container.innerHTML = '';
+            const sorted = Object.values(data.players || {}).sort((a, b) => b.score - a.score);
+            sorted.forEach(p => {
+                const pct = Math.min(100, Math.round((p.score / (data.settings?.targetScore || 10)) * 100));
+                const isMe = p.displayName === state.userProfile.displayName;
 
-            const bar = document.createElement('div');
-            bar.className = "space-y-1";
-            bar.innerHTML = `
-                <div class="flex justify-between text-xs font-semibold">
-                    <span class="${isMe ? 'text-indigo-400 font-bold' : 'text-slate-300'}">${p.avatar || '\ud83e\uddee'} ${p.displayName} ${isMe ? '(You)' : ''}</span>
-                    <span class="font-mono ${isMe ? 'text-indigo-400' : 'text-slate-400'}">${p.score} / ${data.settings?.targetScore || 10}</span>
-                </div>
-                <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r ${isMe ? 'from-indigo-500 to-purple-500' : 'from-slate-600 to-slate-500'} transition-all duration-300" style="width: ${pct}%;"></div>
-                </div>
-            `;
-            container.appendChild(bar);
-        });
+                const bar = document.createElement('div');
+                bar.className = "space-y-1";
+                bar.innerHTML = `
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="${isMe ? 'text-indigo-400 font-bold' : 'text-slate-300'}">${p.avatar || '🧮'} ${p.displayName} ${isMe ? '(You)' : ''}</span>
+                        <span class="font-mono ${isMe ? 'text-indigo-400' : 'text-slate-400'}">${p.score} / ${data.settings?.targetScore || 10}</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r ${isMe ? 'from-indigo-500 to-purple-500' : 'from-slate-600 to-slate-500'} transition-all duration-300" style="width: ${pct}%;"></div>
+                    </div>
+                `;
+                container.appendChild(bar);
+            });
+        }
 
         const target = data.settings?.targetScore || 10;
         const winner = players.find(p => p.score >= target);
