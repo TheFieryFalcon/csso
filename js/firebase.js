@@ -15,8 +15,10 @@ export const LOCAL_STORAGE_KEY_PROFILE = 'csso_math_user_profile_v1';
 export const LOCAL_STORAGE_KEY_ROOMS = 'csso_math_mock_rooms_v1';
 export const LOCAL_STORAGE_KEY_FIREBASE_API_KEY = 'csso_firebase_api_key';
 
+export const DEFAULT_FIREBASE_API_KEY = "AIzaSyBhm7I2wEcJkqEOn_XJi9XmUw-94y0Q8nw";
+
 export function getFirebaseApiKey() {
-    return localStorage.getItem(LOCAL_STORAGE_KEY_FIREBASE_API_KEY) || "";
+    return localStorage.getItem(LOCAL_STORAGE_KEY_FIREBASE_API_KEY) || DEFAULT_FIREBASE_API_KEY;
 }
 
 export function setFirebaseApiKey(key) {
