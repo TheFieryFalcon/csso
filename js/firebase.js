@@ -13,7 +13,25 @@ import {
 export const LOCAL_STORAGE_KEY_PROFILE = 'csso_math_user_profile_v1';
 export const LOCAL_STORAGE_KEY_ROOMS = 'csso_math_mock_rooms_v1';
 
+<<<<<<< HEAD
 // Firebase Configuration (Fallback gracefully to local offline mode if missing)
+=======
+export const DEFAULT_FIREBASE_API_KEY = "AIzaSyBhm7I2wEcJkqEOn_XJi9XmUw-94y0Q8nw";
+
+export function getFirebaseApiKey() {
+    return localStorage.getItem(LOCAL_STORAGE_KEY_FIREBASE_API_KEY) || DEFAULT_FIREBASE_API_KEY;
+}
+
+export function setFirebaseApiKey(key) {
+    if (key) {
+        localStorage.setItem(LOCAL_STORAGE_KEY_FIREBASE_API_KEY, key.trim());
+    } else {
+        localStorage.removeItem(LOCAL_STORAGE_KEY_FIREBASE_API_KEY);
+    }
+}
+
+// Firebase Configuration targeting project: specrush
+>>>>>>> c6105a7 (Firebase api key)
 export const firebaseConfig = {
     apiKey: "",
     authDomain: "",
