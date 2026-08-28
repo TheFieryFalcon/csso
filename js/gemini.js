@@ -1,5 +1,5 @@
 // ---------------------------------------------------------
-// GEMINI 3.7 FLASH API INTEGRATION FOR PROOF PARSING
+// GEMINI API INTEGRATION WITH FLASH-LITE 503/429 FALLBACK
 // ---------------------------------------------------------
 
 const LOCAL_STORAGE_KEY_GEMINI_KEY = 'csso_gemini_api_key';
@@ -17,8 +17,10 @@ export function setGeminiApiKey(key) {
 }
 
 /**
- * Validates a student's proof step input using Gemini 3.7 Flash.
- * Returns { isCorrect: boolean, score: number, feedback: string, errorType?: string }
+ * Validates a student's proof step input using Gemini models with automatic 503/high-demand fallback.
+ * Primary: gemini-3.7-flash (or gemini-2.5-flash)
+ * Fallback: gemini-2.5-flash-lite (handles 503 UNAVAILABLE / high demand spikes)
+ * Safety: local heuristic matcher
  */
 export async function evaluateProofStepWithGemini({
     problemContext,
@@ -63,50 +65,76 @@ ${studentAnswer}
 
 Evaluate the student's submission now.`;
 
-    try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                contents: [
-                    {
-                        role: 'user',
-                        parts: [{ text: `${systemInstruction}\n\n${prompt}` }]
+    // Sequence of models to try in case of 503 UNAVAILABLE, 429 rate limit, or high-demand spikes
+    const modelSequence = [
+        'gemini-3.7-flash',
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
+        'gemini-2.0-flash-lite'
+    ];
+
+    for (const model of modelSequence) {
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            role: 'user',
+                            parts: [{ text: `${systemInstruction}\n\n${prompt}` }]
+                        }
+                    ],
+                    generationConfig: {
+                        responseMimeType: 'application/json',
+                        temperature: 0.1
                     }
-                ],
-                generationConfig: {
-                    responseMimeType: 'application/json',
-                    temperature: 0.1
+                })
+            });
+
+            if (response.status === 503 || response.status === 429 || response.status === 500) {
+                console.warn(`Gemini model ${model} returned status ${response.status} (High demand/Unavailable). Falling back to lighter model...`);
+                continue; // Try next model in sequence (e.g. gemini-2.5-flash-lite)
+            }
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                console.warn(`Gemini API error on model ${model}:`, errData);
+                // If it's a 503 inside error payload
+                if (errData?.error?.code === 503 || errData?.error?.status === 'UNAVAILABLE') {
+                    console.warn(`High demand on ${model}. Switching to Flash-Lite fallback...`);
+                    continue;
                 }
-            })
-        });
+                continue;
+            }
 
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            console.warn("Gemini API Error:", errData);
-            return fallbackLocalProofEvaluator(studentAnswer, acceptableAnswers);
+            const data = await response.json();
+            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!rawText) {
+                continue;
+            }
+
+            const parsed = JSON.parse(rawText);
+            return {
+                isCorrect: Boolean(parsed.isCorrect),
+                score: typeof parsed.score === 'number' ? parsed.score : (parsed.isCorrect ? 1.0 : 0.0),
+                feedback: parsed.feedback || (parsed.isCorrect ? '✅ Step logically sound!' : '❌ Step needs revision.'),
+                canonicalForm: parsed.canonicalForm || '',
+                isAI: true,
+                modelUsed: model
+            };
+        } catch (err) {
+            console.warn(`Gemini request to ${model} threw error:`, err);
+            // Continue to fallback model
         }
-
-        const data = await response.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!rawText) {
-            return fallbackLocalProofEvaluator(studentAnswer, acceptableAnswers);
-        }
-
-        const parsed = JSON.parse(rawText);
-        return {
-            isCorrect: Boolean(parsed.isCorrect),
-            score: typeof parsed.score === 'number' ? parsed.score : (parsed.isCorrect ? 1.0 : 0.0),
-            feedback: parsed.feedback || (parsed.isCorrect ? '✅ Step logically sound!' : '❌ Step needs revision.'),
-            canonicalForm: parsed.canonicalForm || '',
-            isAI: true
-        };
-    } catch (err) {
-        console.warn("Gemini evaluation request failed:", err);
-        return fallbackLocalProofEvaluator(studentAnswer, acceptableAnswers);
     }
+
+    // If all AI models failed or unavailable, fallback to local heuristics
+    console.warn("All Gemini AI model attempts exhausted. Using local heuristic proof evaluation.");
+    return fallbackLocalProofEvaluator(studentAnswer, acceptableAnswers);
 }
 
 /**

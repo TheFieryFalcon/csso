@@ -4,8 +4,8 @@
 import { 
     loadLocalProfile, saveLocalProfile, clearLocalProfile, createFreshGuestProfile,
     isFirebaseAvailable, auth, db, provider, initFirebase, setFirebaseApiKey, getFirebaseApiKey,
-    signInWithPopup, signOut, doc, setDoc, getDoc, updateDoc, serverTimestamp,
-    saveRoomToDB, getRoomFromDB, updateRoomInDB, subscribeToRoom, LOCAL_STORAGE_KEY_ROOMS,
+    signInWithPopup, onAuthStateChanged, signOut, doc, setDoc, getDoc, updateDoc, serverTimestamp,
+    saveRoomToDB, getRoomFromDB, getPublicRoomsFromDB, updateRoomInDB, subscribeToRoom, LOCAL_STORAGE_KEY_ROOMS,
     resolveProofQueryInRoom
 } from './firebase.js';
 import { questionDB } from './questions/questionDB.js';
@@ -39,12 +39,73 @@ const game = new GameEngine(state);
 // ---------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
     updateNavbarProfileBadge(state.userProfile);
+    updateCloudStatusBadge();
     initScratchpad();
     setupAvatarPicker();
     setupLobbyControls();
     setupFirebaseControls();
+    setupAuthObserver();
     showScreen('landing');
 });
+
+function updateCloudStatusBadge() {
+    const badge = document.getElementById('nav-cloud-status');
+    const label = document.getElementById('nav-cloud-label');
+    if (!badge || !label) return;
+
+    if (isFirebaseAvailable) {
+        badge.className = "inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+        label.innerText = "specrush Cloud";
+    } else {
+        badge.className = "inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20";
+        label.innerText = "Local Storage Mode";
+    }
+}
+
+function updateRoomNavLeaveButton() {
+    const navLeaveBtn = document.getElementById('nav-btn-leave-room');
+    if (navLeaveBtn) {
+        if (state.currentRoomId) {
+            navLeaveBtn.classList.remove('hidden');
+        } else {
+            navLeaveBtn.classList.add('hidden');
+        }
+    }
+}
+
+function setupAuthObserver() {
+    if (isFirebaseAvailable && auth) {
+        try {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    state.currentUser = {
+                        uid: user.uid,
+                        displayName: user.displayName || state.userProfile.displayName || 'Mathlete',
+                        email: user.email,
+                        isGuest: false
+                    };
+                    state.userProfile.uid = user.uid;
+                    state.userProfile.displayName = user.displayName || state.userProfile.displayName;
+                    state.userProfile.isGuest = false;
+
+                    if (db) {
+                        try {
+                            const userDoc = await getDoc(doc(db, 'users', user.uid));
+                            if (userDoc.exists()) {
+                                const data = userDoc.data();
+                                state.userProfile.elo = data.elo || state.userProfile.elo;
+                                state.userProfile.avatar = data.avatar || state.userProfile.avatar;
+                                state.userProfile.stats = data.stats || state.userProfile.stats;
+                            }
+                        } catch(e) {}
+                    }
+                    saveLocalProfile(state.userProfile);
+                    updateNavbarProfileBadge(state.userProfile);
+                }
+            });
+        } catch(e) {}
+    }
+}
 
 // Top Navigation
 document.getElementById('nav-brand-logo')?.addEventListener('click', () => showScreen('landing'));
@@ -57,6 +118,7 @@ document.getElementById('nav-btn-profile')?.addEventListener('click', () => {
     renderProfileDashboard(state.userProfile, state.currentUser);
     showScreen('profile');
 });
+document.getElementById('nav-btn-leave-room')?.addEventListener('click', exitCurrentRoom);
 
 // Landing Page Hero CTA
 document.getElementById('landing-btn-start-playing')?.addEventListener('click', () => {
@@ -81,10 +143,11 @@ function setupFirebaseControls() {
         const key = document.getElementById('input-firebase-key')?.value.trim();
         setFirebaseApiKey(key);
         const ok = initFirebase();
+        updateCloudStatusBadge();
         if (ok) {
             showToast("✅ Connected to Firebase project: specrush!");
         } else {
-            showToast("Running in local storage fallback mode.");
+            showToast("Running in local storage mode.");
         }
     });
 }
@@ -207,7 +270,7 @@ document.getElementById('btn-save-gemini-key')?.addEventListener('click', () => 
     const key = document.getElementById('input-gemini-key')?.value.trim();
     setGeminiApiKey(key);
     if (key) {
-        showToast("✅ Gemini 3.7 Flash Proof Grader Activated!");
+        showToast("✅ Gemini AI Proof Grader Activated (Flash + Flash-Lite Fallback)!");
     } else {
         showToast("Gemini API Key removed.");
     }
@@ -373,6 +436,7 @@ function setupLobbyControls() {
         }
 
         state.currentRoomId = null;
+        updateRoomNavLeaveButton();
         const questions = questionDB.generateMatchSet(activeTopics, 40, formats);
 
         const progressContainer = document.getElementById('live-progress-bars-container');
@@ -409,16 +473,21 @@ function setupLobbyControls() {
 
     // Rematch & Results
     document.getElementById('results-btn-rematch')?.addEventListener('click', () => {
+        state.currentRoomId = null;
+        updateRoomNavLeaveButton();
         showScreen('lobby');
         loadPublicRooms();
     });
     document.getElementById('results-btn-profile')?.addEventListener('click', () => {
+        state.currentRoomId = null;
+        updateRoomNavLeaveButton();
         renderProfileDashboard(state.userProfile, state.currentUser);
         showScreen('profile');
     });
 
-    // Exit Room Buttons (In waiting room AND in active game)
+    // Exit Room Buttons
     document.getElementById('btn-leave-room')?.addEventListener('click', exitCurrentRoom);
+    document.getElementById('btn-leave-room-top')?.addEventListener('click', exitCurrentRoom);
     document.getElementById('btn-game-leave')?.addEventListener('click', exitCurrentRoom);
 
     // Cloud Sync Button in Header
@@ -459,6 +528,7 @@ function setupLobbyControls() {
 // ---------------------------------------------------------
 async function joinRoom(roomId) {
     state.currentRoomId = roomId;
+    updateRoomNavLeaveButton();
     if (!state.currentUser || !state.currentUser.uid) {
         state.currentUser = {
             uid: state.userProfile.uid,
@@ -480,6 +550,7 @@ async function joinRoom(roomId) {
 
 function enterRoom(roomId) {
     state.currentRoomId = roomId;
+    updateRoomNavLeaveButton();
     if (state.roomUnsubscribe) {
         state.roomUnsubscribe();
         state.roomUnsubscribe = null;
@@ -500,7 +571,7 @@ async function exitCurrentRoom() {
     const uid = state.currentUser?.uid;
 
     try {
-        if (roomId && uid) {
+        if (roomId && uid && roomId !== 'SOLO') {
             const patch = {};
             patch[`players.${uid}`] = null;
             await updateRoomInDB(roomId, patch);
@@ -514,6 +585,7 @@ async function exitCurrentRoom() {
         }
         state.currentRoomId = null;
         state.roomData = null;
+        updateRoomNavLeaveButton();
         showScreen('lobby');
         loadPublicRooms();
         showToast("Exited room.");
@@ -637,13 +709,7 @@ async function loadPublicRooms() {
     const countLabel = document.getElementById('rooms-count-label');
     if (!container || !countLabel) return;
 
-    let roomList = [];
-    if (isFirebaseAvailable && db) {
-        // Fetch or listen to Firestore rooms if configured
-    }
-    const rooms = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY_ROOMS) || '{}');
-    roomList = Object.values(rooms).filter(r => r && r.status === 'waiting');
-
+    const roomList = await getPublicRoomsFromDB();
     countLabel.innerText = `${roomList.length} room${roomList.length === 1 ? '' : 's'} available`;
     container.innerHTML = '';
 
