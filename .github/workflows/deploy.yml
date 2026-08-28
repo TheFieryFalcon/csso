@@ -17,7 +17,7 @@ jobs:
         uses: nwtgck/actions-netlify@v3.0
         with:
           publish-dir: '.'
-          production-deploy: ${{ github.ref == 'refs/heads/main' }}
+          production-deploy: ${{ github.ref == 'refs/heads/mater' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           enable-pull-request-comment: true
           enable-commit-comment: true
