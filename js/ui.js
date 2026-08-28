@@ -24,8 +24,8 @@ export function showToast(message, isError = false) {
     if (!container || !msgEl) return;
 
     msgEl.innerHTML = `
-        <span class="${isError ? 'text-rose-400' : 'text-emerald-400'} font-bold">${isError ? '⚠️' : '✨'}</span>
-        <span class="text-xs text-slate-100">${message}</span>
+        <span class="${isError ? 'text-rose-400' : 'text-emerald-400'} font-medium">${isError ? '●' : '●'}</span>
+        <span class="text-xs text-slate-200">${message}</span>
     `;
 
     container.classList.remove('translate-y-28', 'opacity-0');
@@ -34,7 +34,7 @@ export function showToast(message, isError = false) {
     setTimeout(() => {
         container.classList.remove('translate-y-0', 'opacity-100');
         container.classList.add('translate-y-28', 'opacity-0');
-    }, 2800);
+    }, 2500);
 }
 
 export function updateNavbarProfileBadge(userProfile) {
@@ -42,7 +42,7 @@ export function updateNavbarProfileBadge(userProfile) {
     const nameEl = document.getElementById('nav-user-name');
     const eloEl = document.getElementById('nav-user-elo');
     if (avatarEl) avatarEl.innerText = userProfile.avatar || '🧮';
-    if (nameEl) nameEl.innerText = userProfile.displayName || 'Player';
+    if (nameEl) nameEl.innerText = userProfile.displayName || 'Account';
     if (eloEl) eloEl.innerText = userProfile.elo || 1200;
 }
 
@@ -52,236 +52,254 @@ export function renderProfileDashboard(userProfile, currentUser) {
     const emailDisplay = document.getElementById('profile-email-display');
     const eloDisplay = document.getElementById('profile-elo-display');
     const tierBadge = document.getElementById('profile-tier-badge');
-    const rankTitle = document.getElementById('profile-rank-title');
 
     if (avatarDisplay) avatarDisplay.innerText = userProfile.avatar || '🧮';
-    if (nameDisplay) nameDisplay.innerText = userProfile.displayName || 'Mathlete';
-    if (emailDisplay) emailDisplay.innerText = (currentUser && !currentUser.isGuest) ? (currentUser.email || 'Cloud Account') : 'Local Guest Account';
+    if (nameDisplay) nameDisplay.innerText = userProfile.displayName || 'Player';
+    if (emailDisplay) emailDisplay.innerText = currentUser?.email || 'Cloud Account';
     if (eloDisplay) eloDisplay.innerText = userProfile.elo || 1200;
 
     const elo = userProfile.elo || 1200;
-    let tier = 'Bronze';
-    let title = 'Apprentice';
-    let tierClass = 'bg-amber-700/20 text-amber-300 border-amber-700/30';
+    let tier = 'Standard';
+    let tierClass = 'bg-slate-800 text-slate-300 border-slate-700';
 
-    if (elo >= 1600) {
-        tier = 'Grandmaster';
-        title = 'WACE Legend';
-        tierClass = 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-    } else if (elo >= 1400) {
-        tier = 'Diamond';
-        title = 'Specialist Prodigy';
-        tierClass = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
-    } else if (elo >= 1300) {
-        tier = 'Gold';
-        title = 'Methods Master';
-        tierClass = 'bg-amber-400/20 text-amber-300 border-amber-400/30';
+    if (elo >= 1500) {
+        tier = 'Advanced';
+        tierClass = 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20';
+    } else if (elo >= 1350) {
+        tier = 'Proficient';
+        tierClass = 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20';
     } else if (elo >= 1200) {
-        tier = 'Silver';
-        title = 'Mathlete';
-        tierClass = 'bg-slate-400/20 text-slate-300 border-slate-400/30';
+        tier = 'Intermediate';
+        tierClass = 'bg-slate-800 text-slate-300 border-slate-700';
     }
 
     if (tierBadge) {
         tierBadge.innerText = tier;
-        tierBadge.className = `px-2 py-0.5 rounded text-[10px] font-extrabold uppercase border ${tierClass}`;
+        tierBadge.className = `px-2 py-0.5 rounded text-[10px] font-semibold uppercase border ${tierClass}`;
     }
-    if (rankTitle) rankTitle.innerText = title;
 
     const stats = userProfile.stats || {};
     const totalAns = stats.totalAnswered || 0;
     const totalCorr = stats.totalCorrect || 0;
     const pct = totalAns > 0 ? Math.round((totalCorr / totalAns) * 100) : 0;
     const won = stats.matchesWon || 0;
-    const played = stats.matchesPlayed || 0;
-    const lost = Math.max(0, played - won);
-    const wlRatio = lost > 0 ? (won / lost).toFixed(2) : won.toFixed(2);
 
     const statAns = document.getElementById('stat-total-answered');
     const statAcc = document.getElementById('stat-accuracy-rate');
     const statWon = document.getElementById('stat-matches-won');
-    const statWl = document.getElementById('stat-win-loss-ratio');
+    const statElo = document.getElementById('stat-win-loss-ratio');
 
     if (statAns) statAns.innerText = totalAns;
     if (statAcc) statAcc.innerText = `${pct}%`;
     if (statWon) statWon.innerText = won;
-    if (statWl) statWl.innerText = wlRatio;
+    if (statElo) statElo.innerText = elo;
 
-    // Render topic mastery
-    const topicContainer = document.getElementById('topic-mastery-container');
-    if (topicContainer) {
-        topicContainer.innerHTML = '';
-        const topicStats = stats.topicStats || {};
-        const topics = [
-            'Functions and Graphs', 'Trigonometric Functions', 'Counting and Probability',
-            'Exponential Functions', 'Sequences and Series', 'Rates of Change',
-            'Geometry', 'Combinatorics', 'Vectors in the Plane', 'Trigonometry (Spec)',
-            'Matrices', 'Real and Complex Numbers'
-        ];
+    renderTopicMastery(stats.topicStats || {});
+}
 
-        topics.forEach(t => {
-            const data = topicStats[t] || { answered: 0, correct: 0 };
-            const topicPct = data.answered > 0 ? Math.round((data.correct / data.answered) * 100) : 0;
+function renderTopicMastery(topicStats) {
+    const container = document.getElementById('topic-mastery-container');
+    if (!container) return;
+    container.innerHTML = '';
 
-            const item = document.createElement('div');
-            item.className = "p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5";
-            item.innerHTML = `
-                <div class="flex items-center justify-between text-xs">
-                    <span class="font-semibold text-slate-200">${t}</span>
-                    <span class="font-mono text-indigo-400 font-bold">${topicPct}% (${data.correct}/${data.answered})</span>
-                </div>
-                <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" style="width: ${topicPct}%;"></div>
-                </div>
-            `;
-            topicContainer.appendChild(item);
-        });
-    }
+    const topics = [
+        'Functions and Graphs', 'Trigonometric Functions', 'Counting and Probability',
+        'Exponential Functions', 'Sequences and Series', 'Rates of Change',
+        'Geometry', 'Combinatorics', 'Vectors in the Plane',
+        'Trigonometry (Spec)', 'Matrices', 'Real and Complex Numbers'
+    ];
+
+    topics.forEach(topic => {
+        const item = topicStats[topic] || { answered: 0, correct: 0 };
+        const pct = item.answered > 0 ? Math.round((item.correct / item.answered) * 100) : 0;
+
+        const card = document.createElement('div');
+        card.className = "p-3 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1.5";
+        card.innerHTML = `
+            <div class="flex justify-between items-center text-xs">
+                <span class="font-medium text-slate-200">${topic}</span>
+                <span class="font-mono text-slate-400 text-[11px]">${item.correct}/${item.answered} (${pct}%)</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-500 transition-all duration-300" style="width: ${pct}%;"></div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
 }
 
 // ---------------------------------------------------------
-// DUAL-MODE SCRATCHPAD (FREEHAND CANVAS + LATEX TYPER)
+// DUAL-MODE SCRATCHPAD INITIALIZER
 // ---------------------------------------------------------
 export function initScratchpad() {
-    const toggleBtn = document.getElementById('btn-toggle-scratchpad');
     const drawer = document.getElementById('scratchpad-drawer');
-    const canvas = document.getElementById('scratchpad-canvas');
-    const clearBtn = document.getElementById('btn-clear-canvas');
-
-    if (!toggleBtn || !drawer) return;
-
-    toggleBtn.addEventListener('click', () => {
-        drawer.classList.toggle('hidden');
-        if (!drawer.classList.contains('hidden')) {
-            resizeCanvas();
-        }
-    });
-
-    // Tab switcher between Drawing Canvas and LaTeX Typer
+    const toggleBtn = document.getElementById('btn-toggle-scratchpad');
     const tabDraw = document.getElementById('scratchpad-tab-draw');
     const tabLatex = document.getElementById('scratchpad-tab-latex');
     const viewDraw = document.getElementById('scratchpad-view-draw');
     const viewLatex = document.getElementById('scratchpad-view-latex');
 
+    if (toggleBtn && drawer) {
+        toggleBtn.addEventListener('click', () => {
+            drawer.classList.toggle('hidden');
+            if (!drawer.classList.contains('hidden') && viewDraw && !viewDraw.classList.contains('hidden')) {
+                resizeCanvas();
+            }
+        });
+    }
+
     if (tabDraw && tabLatex && viewDraw && viewLatex) {
         tabDraw.addEventListener('click', () => {
-            tabDraw.className = "px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white";
-            tabLatex.className = "px-3 py-1 rounded-lg text-xs font-bold glass-button text-slate-400 hover:text-white";
+            tabDraw.className = "px-3 py-1 rounded-md text-xs font-medium bg-indigo-600 text-white";
+            tabLatex.className = "px-3 py-1 rounded-md text-xs font-medium glass-button text-slate-400 hover:text-white";
             viewDraw.classList.remove('hidden');
             viewLatex.classList.add('hidden');
             resizeCanvas();
         });
 
         tabLatex.addEventListener('click', () => {
-            tabLatex.className = "px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white";
-            tabDraw.className = "px-3 py-1 rounded-lg text-xs font-bold glass-button text-slate-400 hover:text-white";
+            tabLatex.className = "px-3 py-1 rounded-md text-xs font-medium bg-indigo-600 text-white";
+            tabDraw.className = "px-3 py-1 rounded-md text-xs font-medium glass-button text-slate-400 hover:text-white";
             viewLatex.classList.remove('hidden');
             viewDraw.classList.add('hidden');
         });
     }
 
-    // LaTeX Typer Live MathJax Preview & Symbol Buttons
-    const latexInput = document.getElementById('scratchpad-latex-input');
-    const latexPreview = document.getElementById('scratchpad-latex-preview');
+    initCanvas();
+    initLatexTyper();
+}
 
-    function updateLatexPreview() {
-        if (!latexInput || !latexPreview) return;
-        const val = latexInput.value.trim();
-        if (!val) {
-            latexPreview.innerHTML = `<span class="text-xs text-slate-500 italic">Live rendered LaTeX math appears here...</span>`;
-            return;
-        }
-        latexPreview.innerHTML = `\\[${val}\\]`;
-        if (window.MathJax && window.MathJax.typesetPromise) {
-            window.MathJax.typesetPromise([latexPreview]).catch(err => console.warn(err));
-        }
-    }
+function initCanvas() {
+    const canvas = document.getElementById('scratchpad-canvas');
+    const clearBtn = document.getElementById('btn-clear-canvas');
+    if (!canvas) return;
 
-    if (latexInput) {
-        latexInput.addEventListener('input', updateLatexPreview);
-    }
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
 
-    // Quick symbol toolbar buttons
-    document.querySelectorAll('.scratch-sym-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (!latexInput) return;
-            const snippet = btn.getAttribute('data-latex') || '';
-            const start = latexInput.selectionStart;
-            const end = latexInput.selectionEnd;
-            const text = latexInput.value;
-            latexInput.value = text.substring(0, start) + snippet + text.substring(end);
-            latexInput.focus();
-            latexInput.selectionStart = latexInput.selectionEnd = start + snippet.length;
-            updateLatexPreview();
-        });
-    });
-
-    const clearLatexBtn = document.getElementById('btn-clear-latex');
-    if (clearLatexBtn && latexInput) {
-        clearLatexBtn.addEventListener('click', () => {
-            latexInput.value = '';
-            updateLatexPreview();
-        });
-    }
-
-    // Canvas drawing logic
-    if (canvas) {
-        const ctx = canvas.getContext('2d');
-        let isDrawing = false;
-
-        function resizeCanvas() {
-            canvas.width = canvas.parentElement.clientWidth || 600;
-            canvas.height = 180;
-            ctx.strokeStyle = '#818cf8';
-            ctx.lineWidth = 2.5;
+    function resize() {
+        const rect = canvas.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            ctx.strokeStyle = '#a5b4fc';
+            ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
         }
+    }
 
-        window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('resize', resize);
+    setTimeout(resize, 100);
 
-        canvas.addEventListener('mousedown', (e) => {
-            isDrawing = true;
-            const rect = canvas.getBoundingClientRect();
-            ctx.beginPath();
-            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    function start(e) {
+        isDrawing = true;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        lastX = clientX - rect.left;
+        lastY = clientY - rect.top;
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+        lastX = x;
+        lastY = y;
+    }
+
+    function stop() {
+        isDrawing = false;
+    }
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stop);
+    canvas.addEventListener('mouseleave', stop);
+
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stop);
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
+    }
+}
 
-        canvas.addEventListener('mousemove', (e) => {
-            if (!isDrawing) return;
-            const rect = canvas.getBoundingClientRect();
-            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-            ctx.stroke();
-        });
+function resizeCanvas() {
+    const canvas = document.getElementById('scratchpad-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+        const temp = document.createElement('canvas');
+        temp.width = canvas.width;
+        temp.height = canvas.height;
+        const tempCtx = temp.getContext('2d');
+        tempCtx.drawImage(canvas, 0, 0);
 
-        canvas.addEventListener('mouseup', () => isDrawing = false);
-        canvas.addEventListener('mouseleave', () => isDrawing = false);
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        ctx.drawImage(temp, 0, 0);
+        ctx.strokeStyle = '#a5b4fc';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    }
+}
 
-        // Touch support
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            isDrawing = true;
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            ctx.beginPath();
-            ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
-        });
+function initLatexTyper() {
+    const input = document.getElementById('scratchpad-latex-input');
+    const preview = document.getElementById('scratchpad-latex-preview');
+    const clearBtn = document.getElementById('btn-clear-latex');
 
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            if (!isDrawing) return;
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
-            ctx.stroke();
-        });
+    if (!input || !preview) return;
 
-        canvas.addEventListener('touchend', () => isDrawing = false);
-
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            });
+    function renderPreview() {
+        const text = input.value.trim();
+        if (!text) {
+            preview.innerHTML = `<span class="text-slate-500 italic text-xs">Rendered math preview appears here...</span>`;
+            return;
         }
+        preview.innerHTML = `$$${text}$$`;
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise([preview]).catch(() => {});
+        }
+    }
+
+    input.addEventListener('input', renderPreview);
+
+    document.querySelectorAll('.scratch-sym-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const sym = btn.dataset.latex || '';
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            input.value = input.value.substring(0, start) + sym + input.value.substring(end);
+            input.focus();
+            input.selectionStart = input.selectionEnd = start + sym.length;
+            renderPreview();
+        });
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            renderPreview();
+        });
     }
 }
