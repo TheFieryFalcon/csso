@@ -2,11 +2,12 @@
 // WACE MATH RUSH - MAIN APPLICATION ENTRY POINT
 // ---------------------------------------------------------
 import { 
-    loadLocalProfile, saveLocalProfile, clearLocalProfile, createFreshGuestProfile,
-    isFirebaseAvailable, auth, db, provider, initFirebase, setFirebaseApiKey, getFirebaseApiKey,
-    signInWithPopup, onAuthStateChanged, signOut, doc, setDoc, getDoc, updateDoc, serverTimestamp,
-    saveRoomToDB, getRoomFromDB, getPublicRoomsFromDB, updateRoomInDB, subscribeToRoom, LOCAL_STORAGE_KEY_ROOMS,
-    resolveProofQueryInRoom
+    loadSavedProfile, saveLocalProfile, clearLocalProfile, getInitialStats,
+    isFirebaseAvailable, auth, db,
+    authSignInAnonymous, authSignInEmail, authSignInGoogle, authSignOut,
+    syncUserProfileWithFirestore,
+    saveRoomToDB, getRoomFromDB, getPublicRoomsFromDB, updateRoomInDB, subscribeToRoom,
+    resolveProofQueryInRoom, doc, getDoc
 } from './firebase.js';
 import { questionDB } from './questions/questionDB.js';
 import { GameEngine } from './game.js';
@@ -16,15 +17,22 @@ import {
 } from './ui.js';
 import { setGeminiApiKey, getGeminiApiKey, evaluateProofStepWithGemini } from './gemini.js';
 
-// Application State Object (Initialized with active guest user by default)
-const initialProfile = loadLocalProfile();
+// Application State Object
+const savedProfile = loadSavedProfile();
 const state = {
-    userProfile: initialProfile,
-    currentUser: {
-        uid: initialProfile.uid,
-        displayName: initialProfile.displayName,
-        isGuest: Boolean(initialProfile.isGuest)
+    userProfile: savedProfile || {
+        uid: null,
+        displayName: 'Mathlete',
+        avatar: '🧮',
+        elo: 1200,
+        isGuest: false,
+        stats: getInitialStats()
     },
+    currentUser: savedProfile ? {
+        uid: savedProfile.uid,
+        displayName: savedProfile.displayName,
+        isGuest: Boolean(savedProfile.isGuest)
+    } : null,
     currentRoomId: null,
     roomUnsubscribe: null,
     roomData: null,
@@ -38,14 +46,19 @@ const game = new GameEngine(state);
 // DOM EVENT LISTENERS & ROUTING
 // ---------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-    updateNavbarProfileBadge(state.userProfile);
-    updateCloudStatusBadge();
     initScratchpad();
     setupAvatarPicker();
     setupLobbyControls();
-    setupFirebaseControls();
-    setupAuthObserver();
-    showScreen('landing');
+    setupAuthHandlers();
+
+    if (savedProfile && state.currentUser) {
+        updateNavbarProfileBadge(state.userProfile);
+        updateCloudStatusBadge();
+        showScreen('landing');
+    } else {
+        // First Launch: Render First-Launch Authentication Screen
+        showScreen('login');
+    }
 });
 
 function updateCloudStatusBadge() {
@@ -58,7 +71,7 @@ function updateCloudStatusBadge() {
         label.innerText = "specrush Cloud";
     } else {
         badge.className = "inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20";
-        label.innerText = "Local Storage Mode";
+        label.innerText = "Offline Mode";
     }
 }
 
@@ -73,193 +86,201 @@ function updateRoomNavLeaveButton() {
     }
 }
 
-function setupAuthObserver() {
-    if (isFirebaseAvailable && auth) {
-        try {
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    state.currentUser = {
-                        uid: user.uid,
-                        displayName: user.displayName || state.userProfile.displayName || 'Mathlete',
-                        email: user.email,
-                        isGuest: false
-                    };
-                    state.userProfile.uid = user.uid;
-                    state.userProfile.displayName = user.displayName || state.userProfile.displayName;
-                    state.userProfile.isGuest = false;
+// ---------------------------------------------------------
+// FIRST-LAUNCH AUTHENTICATION HANDLERS (4 MODES)
+// ---------------------------------------------------------
+function setupAuthHandlers() {
+    let isEmailRegisterMode = false;
 
-                    if (db) {
-                        try {
-                            const userDoc = await getDoc(doc(db, 'users', user.uid));
-                            if (userDoc.exists()) {
-                                const data = userDoc.data();
-                                state.userProfile.elo = data.elo || state.userProfile.elo;
-                                state.userProfile.avatar = data.avatar || state.userProfile.avatar;
-                                state.userProfile.stats = data.stats || state.userProfile.stats;
-                            }
-                        } catch(e) {}
-                    }
-                    saveLocalProfile(state.userProfile);
-                    updateNavbarProfileBadge(state.userProfile);
-                }
+    // Toggle between Sign In and Register
+    document.getElementById('btn-toggle-email-auth-mode')?.addEventListener('click', () => {
+        isEmailRegisterMode = !isEmailRegisterMode;
+        const toggleBtn = document.getElementById('btn-toggle-email-auth-mode');
+        const submitBtn = document.getElementById('btn-submit-email-auth');
+        if (isEmailRegisterMode) {
+            if (toggleBtn) toggleBtn.innerText = "Already have an account? Sign In";
+            if (submitBtn) submitBtn.innerText = "Create Account & Sign In";
+        } else {
+            if (toggleBtn) toggleBtn.innerText = "Need an account? Register";
+            if (submitBtn) submitBtn.innerText = "Sign In with Email";
+        }
+    });
+
+    // 1. Anonymous Authentication
+    document.getElementById('btn-auth-anonymous')?.addEventListener('click', async () => {
+        try {
+            showToast("Connecting to specrush cloud...");
+            const user = await authSignInAnonymous();
+            completeAuthentication({
+                uid: user.uid,
+                displayName: `Mathlete_${user.uid.slice(-4).toUpperCase()}`,
+                email: null,
+                isGuest: false
             });
-        } catch(e) {}
+            showToast("✅ Connected anonymously!");
+        } catch (err) {
+            console.error("Anonymous auth error:", err);
+            showToast("Auth note: " + (err.message || "Failed to authenticate"), true);
+        }
+    });
+
+    // 2. Google Authentication
+    document.getElementById('btn-google-login')?.addEventListener('click', async () => {
+        try {
+            showToast("Authenticating with Google...");
+            const user = await authSignInGoogle();
+            completeAuthentication({
+                uid: user.uid,
+                displayName: user.displayName || 'Google Mathlete',
+                email: user.email,
+                isGuest: false
+            });
+            showToast(`Welcome, ${user.displayName || 'Mathlete'}!`);
+        } catch (err) {
+            console.error("Google Auth error:", err);
+            if (err.code === 'auth/unauthorized-domain') {
+                showToast("Domain not yet authorized in Firebase Console. You can use Anonymous or Guest mode!", true);
+            } else if (err.code === 'auth/popup-blocked') {
+                showToast("Popup blocked by browser. Please allow popups.", true);
+            } else {
+                showToast("Google Auth: " + (err.message || "Failed to sign in"), true);
+            }
+        }
+    });
+
+    // 3. Email Authentication
+    document.getElementById('form-email-auth')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('input-auth-email')?.value.trim();
+        const password = document.getElementById('input-auth-password')?.value;
+        if (!email || !password) return;
+
+        try {
+            showToast(isEmailRegisterMode ? "Creating account..." : "Signing in...");
+            const user = await authSignInEmail(email, password, isEmailRegisterMode);
+            completeAuthentication({
+                uid: user.uid,
+                displayName: email.split('@')[0],
+                email: email,
+                isGuest: false
+            });
+            showToast(isEmailRegisterMode ? "Account created successfully!" : "Signed in successfully!");
+        } catch (err) {
+            console.error("Email auth error:", err);
+            showToast("Email Auth: " + (err.message || "Authentication failed"), true);
+        }
+    });
+
+    // 4. Guest Mode
+    document.getElementById('form-guest-login')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('input-guest-name')?.value.trim() || 'Guest Mathlete';
+        const guestUid = 'guest_' + Math.random().toString(36).substr(2, 9);
+        completeAuthentication({
+            uid: guestUid,
+            displayName: name,
+            email: null,
+            isGuest: true
+        });
+        showToast(`Playing as ${name} (Guest)`);
+    });
+
+    // Sign Out Handler
+    document.getElementById('profile-btn-logout')?.addEventListener('click', async () => {
+        await authSignOut();
+        state.currentUser = null;
+        state.userProfile = {
+            uid: null,
+            displayName: 'Sign In',
+            avatar: '🧮',
+            elo: 1200,
+            isGuest: false,
+            stats: getInitialStats()
+        };
+        updateNavbarProfileBadge(state.userProfile);
+        showToast("Signed out.");
+        showScreen('login');
+    });
+}
+
+async function completeAuthentication(userObj) {
+    state.currentUser = userObj;
+    state.userProfile = {
+        uid: userObj.uid,
+        displayName: userObj.displayName,
+        avatar: '🧮',
+        elo: 1200,
+        isGuest: userObj.isGuest,
+        stats: getInitialStats()
+    };
+
+    // Sync / Load existing statistics from Firestore if available
+    if (db && !userObj.isGuest) {
+        try {
+            await syncUserProfileWithFirestore(userObj, userObj.displayName, userObj.isGuest);
+            const userDoc = await getDoc(doc(db, 'users', userObj.uid));
+            if (userDoc.exists()) {
+                const data = userDoc.data();
+                state.userProfile.elo = data.elo || 1200;
+                state.userProfile.avatar = data.avatar || '🧮';
+                state.userProfile.stats = data.stats || getInitialStats();
+            }
+        } catch(e) {
+            console.warn("Firestore profile sync note:", e);
+        }
     }
+
+    saveLocalProfile(state.userProfile);
+    updateNavbarProfileBadge(state.userProfile);
+    updateCloudStatusBadge();
+    showScreen('lobby');
+    loadPublicRooms();
 }
 
 // Top Navigation
-document.getElementById('nav-brand-logo')?.addEventListener('click', () => showScreen('landing'));
-document.getElementById('nav-btn-landing')?.addEventListener('click', () => showScreen('landing'));
+document.getElementById('nav-brand-logo')?.addEventListener('click', () => {
+    if (state.currentUser) showScreen('landing');
+    else showScreen('login');
+});
+document.getElementById('nav-btn-landing')?.addEventListener('click', () => {
+    if (state.currentUser) showScreen('landing');
+    else showScreen('login');
+});
 document.getElementById('nav-btn-lobby')?.addEventListener('click', () => {
-    showScreen('lobby');
-    loadPublicRooms();
+    if (state.currentUser) {
+        showScreen('lobby');
+        loadPublicRooms();
+    } else {
+        showScreen('login');
+    }
 });
 document.getElementById('nav-btn-profile')?.addEventListener('click', () => {
-    renderProfileDashboard(state.userProfile, state.currentUser);
-    showScreen('profile');
+    if (state.currentUser) {
+        renderProfileDashboard(state.userProfile, state.currentUser);
+        showScreen('profile');
+    } else {
+        showScreen('login');
+    }
 });
 document.getElementById('nav-btn-leave-room')?.addEventListener('click', exitCurrentRoom);
 
 // Landing Page Hero CTA
 document.getElementById('landing-btn-start-playing')?.addEventListener('click', () => {
-    showScreen('lobby');
-    loadPublicRooms();
+    if (state.currentUser) {
+        showScreen('lobby');
+        loadPublicRooms();
+    } else {
+        showScreen('login');
+    }
 });
 document.getElementById('landing-btn-view-profile')?.addEventListener('click', () => {
-    renderProfileDashboard(state.userProfile, state.currentUser);
-    showScreen('profile');
-});
-
-// ---------------------------------------------------------
-// AUTHENTICATION HANDLERS
-// ---------------------------------------------------------
-function setupFirebaseControls() {
-    const fbInput = document.getElementById('input-firebase-key');
-    if (fbInput) {
-        fbInput.value = getFirebaseApiKey();
-    }
-
-    document.getElementById('btn-save-firebase-key')?.addEventListener('click', () => {
-        const key = document.getElementById('input-firebase-key')?.value.trim();
-        setFirebaseApiKey(key);
-        const ok = initFirebase();
-        updateCloudStatusBadge();
-        if (ok) {
-            showToast("✅ Connected to Firebase project: specrush!");
-        } else {
-            showToast("Running in local storage mode.");
-        }
-    });
-}
-
-document.getElementById('btn-google-login')?.addEventListener('click', async () => {
-    if (!isFirebaseAvailable || !auth || !provider) {
-        showToast("Firebase not connected. Operating in local guest mode.", true);
-        state.userProfile.isGuest = true;
-        state.userProfile.displayName = state.userProfile.displayName || "Google User";
-        saveLocalProfile(state.userProfile);
-        state.currentUser = { uid: state.userProfile.uid, displayName: state.userProfile.displayName, isGuest: true };
-        updateNavbarProfileBadge(state.userProfile);
-        showScreen('lobby');
-        loadPublicRooms();
-        return;
-    }
-    try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        state.currentUser = {
-            uid: user.uid,
-            displayName: user.displayName || 'Mathlete',
-            email: user.email,
-            isGuest: false
-        };
-        state.userProfile.uid = user.uid;
-        state.userProfile.displayName = user.displayName || state.userProfile.displayName;
-        state.userProfile.isGuest = false;
-
-        if (db) {
-            try {
-                const userDoc = await getDoc(doc(db, 'users', user.uid));
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    state.userProfile.elo = data.elo || state.userProfile.elo;
-                    state.userProfile.avatar = data.avatar || state.userProfile.avatar;
-                    state.userProfile.stats = data.stats || state.userProfile.stats;
-                } else {
-                    await setDoc(doc(db, 'users', user.uid), {
-                        displayName: state.userProfile.displayName,
-                        avatar: state.userProfile.avatar,
-                        elo: state.userProfile.elo,
-                        stats: state.userProfile.stats,
-                        updatedAt: serverTimestamp()
-                    });
-                }
-            } catch(e) {
-                console.warn("Firestore user sync warning:", e);
-            }
-        }
-
-        saveLocalProfile(state.userProfile);
-        updateNavbarProfileBadge(state.userProfile);
-        showToast(`Welcome back, ${state.userProfile.displayName}!`);
-        showScreen('lobby');
-        loadPublicRooms();
-    } catch (err) {
-        console.error("Google Auth error:", err);
-        if (err.code === 'auth/unauthorized-domain') {
-            showToast("Domain not authorized in Firebase Console (specrush). Continuing as guest.", true);
-        } else if (err.code === 'auth/popup-blocked') {
-            showToast("Popup blocked by browser. Please allow popups.", true);
-        } else {
-            showToast("Sign in note: " + (err.message || 'Continuing as guest.'), true);
-        }
+    if (state.currentUser) {
+        renderProfileDashboard(state.userProfile, state.currentUser);
+        showScreen('profile');
+    } else {
+        showScreen('login');
     }
 });
-
-document.getElementById('form-guest-login')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const nameInput = document.getElementById('input-guest-name')?.value.trim();
-    if (!nameInput) return;
-
-    state.userProfile.displayName = nameInput;
-    state.userProfile.isGuest = true;
-    state.currentUser = {
-        uid: state.userProfile.uid,
-        displayName: state.userProfile.displayName,
-        isGuest: true
-    };
-    saveLocalProfile(state.userProfile);
-    updateNavbarProfileBadge(state.userProfile);
-    showToast(`Playing as ${state.userProfile.displayName}`);
-    showScreen('lobby');
-    loadPublicRooms();
-});
-
-// Robust Sign Out Handler
-document.getElementById('profile-btn-logout')?.addEventListener('click', async () => {
-    try {
-        if (isFirebaseAvailable && auth && !state.currentUser?.isGuest) {
-            await signOut(auth);
-        }
-    } catch(e) {
-        console.warn("Firebase signout error:", e);
-    }
-    
-    // Clear storage and reset to fresh guest state
-    clearLocalProfile();
-    const freshGuest = createFreshGuestProfile();
-    state.userProfile = freshGuest;
-    state.currentUser = {
-        uid: freshGuest.uid,
-        displayName: freshGuest.displayName,
-        isGuest: true
-    };
-    
-    updateNavbarProfileBadge(state.userProfile);
-    showToast("Signed out successfully.");
-    showScreen('landing');
-});
-
 document.getElementById('profile-btn-play')?.addEventListener('click', () => {
     showScreen('lobby');
     loadPublicRooms();
@@ -296,7 +317,7 @@ function setupAvatarPicker() {
             document.getElementById('avatar-picker-container')?.classList.add('hidden');
             showToast(`Avatar updated to ${emoji}`);
             
-            if (isFirebaseAvailable && db && state.currentUser && !state.currentUser.isGuest) {
+            if (db && state.currentUser && !state.currentUser.isGuest) {
                 try {
                     await updateDoc(doc(db, 'users', state.currentUser.uid), { avatar: emoji });
                 } catch(e) {}
@@ -347,11 +368,9 @@ function setupLobbyControls() {
     // Create Room
     document.getElementById('btn-create-room')?.addEventListener('click', async () => {
         if (!state.currentUser || !state.currentUser.uid) {
-            state.currentUser = {
-                uid: state.userProfile.uid,
-                displayName: state.userProfile.displayName,
-                isGuest: true
-            };
+            showToast("Please sign in or select guest mode to create a room.", true);
+            showScreen('login');
+            return;
         }
 
         const checkedTopics = Array.from(document.querySelectorAll('.topic-cb:checked')).map(cb => cb.value);
@@ -412,16 +431,20 @@ function setupLobbyControls() {
             showToast("Enter a valid 6-digit room PIN", true);
             return;
         }
-        const room = await getRoomFromDB(code);
-        if (!room) {
-            showToast("Room not found!", true);
-            return;
+        try {
+            const room = await getRoomFromDB(code);
+            if (!room) {
+                showToast("Room not found on Firebase!", true);
+                return;
+            }
+            if (room.status !== 'waiting') {
+                showToast("This match is already in progress.", true);
+                return;
+            }
+            await joinRoom(code);
+        } catch (e) {
+            showToast("Join error: " + e.message, true);
         }
-        if (room.status !== 'waiting') {
-            showToast("This match is already in progress.", true);
-            return;
-        }
-        await joinRoom(code);
     });
 
     // Solo Practice Run
@@ -492,12 +515,12 @@ function setupLobbyControls() {
 
     // Cloud Sync Button in Header
     document.getElementById('nav-btn-sync-cloud')?.addEventListener('click', async () => {
-        if (!isFirebaseAvailable || !db) {
-            showToast("Operating in local storage mode. Provide Firebase Key in profile to sync.", true);
+        if (!db) {
+            showToast("Firestore is unavailable.", true);
             return;
         }
         try {
-            showToast("Syncing question bank & stats to Firestore (specrush)...");
+            showToast("Syncing question bank to Firestore (specrush)...");
             const staticSet = questionDB.staticQuestions;
             const promises = [];
             for (let i = 0; i < staticSet.length; i++) {
@@ -516,7 +539,7 @@ function setupLobbyControls() {
                 }));
             }
             await Promise.all(promises);
-            showToast("✅ Cloud sync with specrush completed!");
+            showToast("✅ Cloud sync completed!");
         } catch(e) {
             showToast("Sync note: " + e.message, true);
         }
@@ -529,13 +552,6 @@ function setupLobbyControls() {
 async function joinRoom(roomId) {
     state.currentRoomId = roomId;
     updateRoomNavLeaveButton();
-    if (!state.currentUser || !state.currentUser.uid) {
-        state.currentUser = {
-            uid: state.userProfile.uid,
-            displayName: state.userProfile.displayName,
-            isGuest: true
-        };
-    }
     await updateRoomInDB(roomId, {
         [`players.${state.currentUser.uid}`]: {
             displayName: state.userProfile.displayName,
@@ -714,7 +730,7 @@ async function loadPublicRooms() {
     container.innerHTML = '';
 
     if (roomList.length === 0) {
-        container.innerHTML = `<div class="p-6 text-center text-xs text-slate-500 italic">No public matches active. Create one to get started!</div>`;
+        container.innerHTML = `<div class="p-6 text-center text-xs text-slate-500 italic">No public matches active on specrush. Create one to get started!</div>`;
         return;
     }
 

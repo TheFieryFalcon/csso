@@ -68,10 +68,10 @@
                 </button>
                 <button id="nav-btn-profile" class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/60 transition">
                     <span id="nav-user-avatar" class="text-sm">🧮</span>
-                    <span id="nav-user-name" class="font-bold">Player</span>
+                    <span id="nav-user-name" class="font-bold">Sign In</span>
                     <span id="nav-user-elo" class="font-mono text-indigo-400 ml-1">1200</span>
                 </button>
-                <button id="nav-btn-sync-cloud" title="Sync question bank & stats with Firestore (specrush)" class="p-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 text-slate-300 transition">
+                <button id="nav-btn-sync-cloud" title="Sync question bank with Firestore (specrush)" class="p-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 text-slate-300 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/></svg>
                 </button>
             </div>
@@ -97,7 +97,7 @@
                     Master WACE Math through <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Competitive Ranked Battles</span>
                 </h1>
                 <p class="text-base sm:text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
-                    Race against other Year 11 & 12 students in real-time, solve procedural & multi-step proof problems, and climb the statewide Elo ladder with Host-Delegated AI Proof evaluation.
+                    Race against other Year 11 & 12 students in real-time, solve procedural & multi-step proof problems, and climb the statewide Elo ladder with Host-Delegated AI Proof evaluation on Firebase Cloud.
                 </p>
             </div>
 
@@ -158,18 +158,23 @@
         </section>
 
         <!-- ========================================================================= -->
-        <!-- SCREEN 1: LOGIN / ONBOARDING SCREEN -->
+        <!-- SCREEN 1: FIRST-LAUNCH AUTHENTICATION SCREEN (4 MODES) -->
         <!-- ========================================================================= -->
         <section id="screen-login" class="w-full max-w-md glass-panel p-8 rounded-2xl shadow-2xl space-y-6 hidden transition-all duration-300">
             <div class="text-center space-y-2">
                 <div class="inline-flex p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 mb-2">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                 </div>
-                <h2 class="text-2xl font-bold tracking-tight text-white">Join the Arena</h2>
-                <p class="text-xs text-slate-400">Sign in to save your Elo rating, custom avatar, and match analytics</p>
+                <h2 class="text-2xl font-bold tracking-tight text-white">Join WACE Math Rush</h2>
+                <p class="text-xs text-slate-400">Choose your preferred login method to enter the arena</p>
             </div>
 
-            <!-- Google OAuth Sign-in Button -->
+            <!-- Option 1: Fast Anonymous Sign-In -->
+            <button id="btn-auth-anonymous" class="w-full py-3 px-4 rounded-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/25 transition transform hover:-translate-y-0.5">
+                <span>⚡ Instant Anonymous Sign-In</span>
+            </button>
+
+            <!-- Option 2: Google OAuth Sign-in Button -->
             <button id="btn-google-login" class="w-full py-3 px-4 rounded-xl font-semibold bg-white text-slate-900 hover:bg-slate-100 flex items-center justify-center space-x-3 shadow-md transition transform hover:-translate-y-0.5">
                 <svg class="w-5 h-5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -180,22 +185,35 @@
                 <span>Continue with Google</span>
             </button>
 
-            <div class="relative flex py-1 items-center">
-                <div class="flex-grow border-t border-slate-800"></div>
-                <span class="flex-shrink mx-4 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Or play as Guest</span>
-                <div class="flex-grow border-t border-slate-800"></div>
+            <!-- Option 3: Email / Password Form (Expandable) -->
+            <div class="border-t border-slate-800 pt-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-300">Email Authentication</span>
+                    <button type="button" id="btn-toggle-email-auth-mode" class="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold">
+                        Need an account? Register
+                    </button>
+                </div>
+                <form id="form-email-auth" class="space-y-3" onsubmit="return false;">
+                    <input type="email" id="input-auth-email" placeholder="name@school.edu.au" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <input type="password" id="input-auth-password" placeholder="Password (min 6 chars)" minlength="6" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    <button type="submit" id="btn-submit-email-auth" class="w-full py-2.5 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs transition">
+                        Sign In with Email
+                    </button>
+                </form>
             </div>
 
-            <!-- Guest Form -->
-            <form id="form-guest-login" class="space-y-4" onsubmit="return false;">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Display Name</label>
-                    <input type="text" id="input-guest-name" maxlength="15" placeholder="e.g., MatrixMaster" class="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" required>
-                </div>
-                <button type="submit" id="btn-guest-login" class="w-full py-3 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition">
-                    Enter as Guest
-                </button>
-            </form>
+            <!-- Option 4: Local Guest Mode -->
+            <div class="border-t border-slate-800 pt-4 space-y-3">
+                <span class="text-xs font-bold text-slate-400 block">Offline Guest Mode</span>
+                <form id="form-guest-login" class="space-y-2" onsubmit="return false;">
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="input-guest-name" maxlength="15" placeholder="Guest Nickname" class="flex-grow px-3.5 py-2 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs" required>
+                        <button type="submit" id="btn-guest-login" class="px-4 py-2 rounded-xl font-bold glass-button text-slate-300 hover:text-white text-xs transition">
+                            Play as Guest
+                        </button>
+                    </div>
+                </form>
+            </div>
         </section>
 
         <!-- ========================================================================= -->
@@ -215,10 +233,10 @@
                     </div>
                     <div class="space-y-1 text-center md:text-left">
                         <div class="flex items-center space-x-2">
-                            <h2 id="profile-name-display" class="text-2xl font-bold text-white">Guest Player</h2>
+                            <h2 id="profile-name-display" class="text-2xl font-bold text-white">Player</h2>
                             <span id="profile-tier-badge" class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">Gold II</span>
                         </div>
-                        <p id="profile-email-display" class="text-xs text-slate-400">Local Player Account</p>
+                        <p id="profile-email-display" class="text-xs text-slate-400">Authenticated Cloud Profile (specrush)</p>
                         <div class="flex items-center space-x-3 text-xs text-slate-300 pt-1">
                             <span>Rating: <strong id="profile-elo-display" class="text-indigo-400 font-mono font-bold text-sm">1200</strong></span>
                             <span>•</span>
@@ -245,26 +263,6 @@
                 </div>
                 <div class="grid grid-cols-6 sm:grid-cols-12 gap-2" id="avatar-options-grid">
                     <!-- Avatars injected via JS -->
-                </div>
-            </div>
-
-            <!-- Firebase Authentication Config (specrush) -->
-            <div class="glass-panel p-5 rounded-2xl space-y-3 border border-indigo-500/30">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-lg">🔥</span>
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-300">Firebase Auth & DB (specrush)</h3>
-                    </div>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono">specrush.firebaseapp.com</span>
-                </div>
-                <p class="text-xs text-slate-400 leading-relaxed">
-                    Connected to Firebase project <strong>specrush</strong>. Paste your Firebase Web API Key below from <a href="https://console.firebase.google.com/u/0/project/specrush/authentication" target="_blank" class="text-indigo-400 underline font-semibold">Firebase Console &rarr; specrush</a> to enable cloud sync, user logins, and multi-device rank persistence.
-                </p>
-                <div class="flex items-center space-x-2 pt-1">
-                    <input type="password" id="input-firebase-key" placeholder="AIzaSy... (Firebase Web API Key)" class="flex-grow px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button id="btn-save-firebase-key" class="px-4 py-2 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white text-xs transition">
-                        Connect Firebase
-                    </button>
                 </div>
             </div>
 
@@ -332,7 +330,7 @@
                         <h3 class="font-bold text-base text-slate-100 flex items-center space-x-2">
                             <span>🎮 Create Custom Lobby</span>
                         </h3>
-                        <span class="text-xs text-slate-400">Host a multiplayer rush</span>
+                        <span class="text-xs text-slate-400">Host on Firebase specrush</span>
                     </div>
 
                     <div class="space-y-4">
@@ -465,7 +463,7 @@
             <!-- Active Public Lobbies Feed -->
             <div class="glass-panel p-6 rounded-2xl space-y-4">
                 <div class="flex items-center justify-between">
-                    <h3 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Active Match Lobbies</h3>
+                    <h3 class="font-bold text-sm text-slate-200 uppercase tracking-wider">Active Match Lobbies (specrush)</h3>
                     <span class="text-xs text-slate-400" id="rooms-count-label">0 rooms available</span>
                 </div>
                 <div id="rooms-list-container" class="space-y-2 max-h-56 overflow-y-auto pr-1">
