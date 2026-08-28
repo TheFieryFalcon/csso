@@ -19,7 +19,7 @@ export class QuestionDB {
             this.generators.push(specialistGenerators[key].bind(this));
         });
 
-        // Bind 20 Multi-Step Proof generators
+        // Bind Multi-Step and Long-Answer Proof generators
         Object.keys(proofGenerators).forEach(key => {
             this.generators.push(proofGenerators[key].bind(this));
         });
@@ -102,7 +102,7 @@ export class QuestionDB {
      */
     matchesFormat(q, formats) {
         if (!formats) return true;
-        if (q.isProof) {
+        if (q.type === 'long_answer_proof' || q.isLongProof) {
             return Boolean(formats.proofs);
         }
         if (q.type === 'multi_step') {
@@ -144,7 +144,7 @@ export class QuestionDB {
         };
 
         let attempts = 0;
-        while (pool.length < count && attempts < 8000) {
+        while (pool.length < count && attempts < 9000) {
             attempts++;
             const gen = this.generators[Math.floor(Math.random() * this.generators.length)];
             const q = gen();
@@ -156,7 +156,7 @@ export class QuestionDB {
             }
         }
         
-        // If pool is smaller than count, fill with shuffled copies to reach target count
+        // If pool is smaller than count, fill with copies to reach target count
         if (pool.length < count && pool.length > 0) {
             const originalPool = [...pool];
             while (pool.length < count) {
