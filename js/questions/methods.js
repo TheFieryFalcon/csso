@@ -164,6 +164,8 @@ export const methodsGenerators = {
             },
 
     genMethSequencesInfinite() {
+                const a = 6;
+                const r = '1/2';
                 return this.formatQuestion('Sequences and Series', `Find the sum to infinity of the series $6 + 3 + 1.5 + \\dots$`, `$12$`, [`$18$`, `$9$`, `$24$`]);
             },
 
@@ -714,7 +716,7 @@ export const methodsGenerators = {
                 );
             },
 
-    genMethInfiniteConvergenceCondition() {
+    genMethSeqInfiniteConvergenceCondition() {
                 return this.formatQuestion(
                     'Sequences and Series',
                     `Under what condition does an infinite geometric series with common ratio $r$ converge?`,

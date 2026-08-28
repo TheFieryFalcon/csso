@@ -2,16 +2,10 @@
 // WACE MATH RUSH - MAIN APPLICATION ENTRY POINT
 // ---------------------------------------------------------
 import { 
-<<<<<<< HEAD
-    loadLocalProfile, saveLocalProfile, isFirebaseAvailable, auth, db, provider, 
-    signInWithPopup, signOut, doc, setDoc, getDoc, updateDoc, serverTimestamp,
-    saveRoomToDB, getRoomFromDB, updateRoomInDB, subscribeToRoom, LOCAL_STORAGE_KEY_ROOMS,
-=======
     loadLocalProfile, saveLocalProfile, clearLocalProfile, createFreshGuestProfile,
     isFirebaseAvailable, auth, db, provider, initFirebase, setFirebaseApiKey, getFirebaseApiKey,
     signInWithPopup, onAuthStateChanged, signOut, doc, setDoc, getDoc, updateDoc, serverTimestamp,
     saveRoomToDB, getRoomFromDB, getPublicRoomsFromDB, updateRoomInDB, subscribeToRoom, LOCAL_STORAGE_KEY_ROOMS,
->>>>>>> 45a9519 (Misc fixes)
     resolveProofQueryInRoom
 } from './firebase.js';
 import { questionDB } from './questions/questionDB.js';
@@ -29,7 +23,7 @@ const state = {
     currentUser: {
         uid: initialProfile.uid,
         displayName: initialProfile.displayName,
-        isGuest: true
+        isGuest: Boolean(initialProfile.isGuest)
     },
     currentRoomId: null,
     roomUnsubscribe: null,
@@ -49,11 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initScratchpad();
     setupAvatarPicker();
     setupLobbyControls();
-<<<<<<< HEAD
-=======
     setupFirebaseControls();
     setupAuthObserver();
->>>>>>> 45a9519 (Misc fixes)
     showScreen('landing');
 });
 
@@ -142,8 +133,6 @@ document.getElementById('landing-btn-view-profile')?.addEventListener('click', (
 // ---------------------------------------------------------
 // AUTHENTICATION HANDLERS
 // ---------------------------------------------------------
-<<<<<<< HEAD
-=======
 function setupFirebaseControls() {
     const fbInput = document.getElementById('input-firebase-key');
     if (fbInput) {
@@ -163,10 +152,9 @@ function setupFirebaseControls() {
     });
 }
 
->>>>>>> 45a9519 (Misc fixes)
 document.getElementById('btn-google-login')?.addEventListener('click', async () => {
     if (!isFirebaseAvailable || !auth || !provider) {
-        showToast("Firebase Auth not configured. Operating in local guest mode.", true);
+        showToast("Firebase not connected. Operating in local guest mode.", true);
         state.userProfile.isGuest = true;
         state.userProfile.displayName = state.userProfile.displayName || "Google User";
         saveLocalProfile(state.userProfile);
@@ -190,20 +178,24 @@ document.getElementById('btn-google-login')?.addEventListener('click', async () 
         state.userProfile.isGuest = false;
 
         if (db) {
-            const userDoc = await getDoc(doc(db, 'users', user.uid));
-            if (userDoc.exists()) {
-                const data = userDoc.data();
-                state.userProfile.elo = data.elo || state.userProfile.elo;
-                state.userProfile.avatar = data.avatar || state.userProfile.avatar;
-                state.userProfile.stats = data.stats || state.userProfile.stats;
-            } else {
-                await setDoc(doc(db, 'users', user.uid), {
-                    displayName: state.userProfile.displayName,
-                    avatar: state.userProfile.avatar,
-                    elo: state.userProfile.elo,
-                    stats: state.userProfile.stats,
-                    updatedAt: serverTimestamp()
-                });
+            try {
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    state.userProfile.elo = data.elo || state.userProfile.elo;
+                    state.userProfile.avatar = data.avatar || state.userProfile.avatar;
+                    state.userProfile.stats = data.stats || state.userProfile.stats;
+                } else {
+                    await setDoc(doc(db, 'users', user.uid), {
+                        displayName: state.userProfile.displayName,
+                        avatar: state.userProfile.avatar,
+                        elo: state.userProfile.elo,
+                        stats: state.userProfile.stats,
+                        updatedAt: serverTimestamp()
+                    });
+                }
+            } catch(e) {
+                console.warn("Firestore user sync warning:", e);
             }
         }
 
@@ -215,11 +207,11 @@ document.getElementById('btn-google-login')?.addEventListener('click', async () 
     } catch (err) {
         console.error("Google Auth error:", err);
         if (err.code === 'auth/unauthorized-domain') {
-            showToast("Domain not authorized in Firebase Console. Continuing as guest.", true);
+            showToast("Domain not authorized in Firebase Console (specrush). Continuing as guest.", true);
         } else if (err.code === 'auth/popup-blocked') {
             showToast("Popup blocked by browser. Please allow popups.", true);
         } else {
-            showToast("Sign in unavailable: " + (err.message || 'Continuing as guest.'), true);
+            showToast("Sign in note: " + (err.message || 'Continuing as guest.'), true);
         }
     }
 });
@@ -243,18 +235,28 @@ document.getElementById('form-guest-login')?.addEventListener('submit', (e) => {
     loadPublicRooms();
 });
 
+// Robust Sign Out Handler
 document.getElementById('profile-btn-logout')?.addEventListener('click', async () => {
-    if (isFirebaseAvailable && auth && !state.currentUser?.isGuest) {
-        await signOut(auth);
+    try {
+        if (isFirebaseAvailable && auth && !state.currentUser?.isGuest) {
+            await signOut(auth);
+        }
+    } catch(e) {
+        console.warn("Firebase signout error:", e);
     }
-    state.userProfile = loadLocalProfile();
+    
+    // Clear storage and reset to fresh guest state
+    clearLocalProfile();
+    const freshGuest = createFreshGuestProfile();
+    state.userProfile = freshGuest;
     state.currentUser = {
-        uid: state.userProfile.uid,
-        displayName: state.userProfile.displayName,
+        uid: freshGuest.uid,
+        displayName: freshGuest.displayName,
         isGuest: true
     };
+    
     updateNavbarProfileBadge(state.userProfile);
-    showToast("Signed out.");
+    showToast("Signed out successfully.");
     showScreen('landing');
 });
 
@@ -270,7 +272,7 @@ document.getElementById('btn-save-gemini-key')?.addEventListener('click', () => 
     if (key) {
         showToast("✅ Gemini AI Proof Grader Activated (Flash + Flash-Lite Fallback)!");
     } else {
-        showToast("Gemini API Key removed. Proofs will require a key to host or use offline matching.");
+        showToast("Gemini API Key removed.");
     }
 });
 
@@ -344,7 +346,6 @@ function setupLobbyControls() {
 
     // Create Room
     document.getElementById('btn-create-room')?.addEventListener('click', async () => {
-        // Ensure valid current user
         if (!state.currentUser || !state.currentUser.uid) {
             state.currentUser = {
                 uid: state.userProfile.uid,
@@ -365,7 +366,6 @@ function setupLobbyControls() {
             return;
         }
 
-        // Host API Key requirement rule: only required if Proofs are selected!
         const apiKey = getGeminiApiKey();
         if (formats.proofs && !apiKey) {
             showToast("⚠️ Gemini API Key required to host Rigorous Proofs! Set key in Profile or uncheck 'Rigorous Long Proofs' to host without key.", true);
@@ -485,22 +485,19 @@ function setupLobbyControls() {
         showScreen('profile');
     });
 
-<<<<<<< HEAD
-=======
     // Exit Room Buttons
     document.getElementById('btn-leave-room')?.addEventListener('click', exitCurrentRoom);
     document.getElementById('btn-leave-room-top')?.addEventListener('click', exitCurrentRoom);
     document.getElementById('btn-game-leave')?.addEventListener('click', exitCurrentRoom);
 
->>>>>>> 45a9519 (Misc fixes)
     // Cloud Sync Button in Header
     document.getElementById('nav-btn-sync-cloud')?.addEventListener('click', async () => {
         if (!isFirebaseAvailable || !db) {
-            showToast("Operating in local storage mode.");
+            showToast("Operating in local storage mode. Provide Firebase Key in profile to sync.", true);
             return;
         }
         try {
-            showToast("Syncing question bank & stats to Firestore...");
+            showToast("Syncing question bank & stats to Firestore (specrush)...");
             const staticSet = questionDB.staticQuestions;
             const promises = [];
             for (let i = 0; i < staticSet.length; i++) {
@@ -519,9 +516,9 @@ function setupLobbyControls() {
                 }));
             }
             await Promise.all(promises);
-            showToast("✅ Cloud sync completed successfully!");
+            showToast("✅ Cloud sync with specrush completed!");
         } catch(e) {
-            showToast("Sync failed: " + e.message, true);
+            showToast("Sync note: " + e.message, true);
         }
     });
 }
@@ -553,15 +550,11 @@ async function joinRoom(roomId) {
 
 function enterRoom(roomId) {
     state.currentRoomId = roomId;
-<<<<<<< HEAD
-    if (state.roomUnsubscribe) state.roomUnsubscribe();
-=======
     updateRoomNavLeaveButton();
     if (state.roomUnsubscribe) {
         state.roomUnsubscribe();
         state.roomUnsubscribe = null;
     }
->>>>>>> 45a9519 (Misc fixes)
 
     state.roomUnsubscribe = subscribeToRoom(roomId, (data) => {
         state.roomData = data;
@@ -573,8 +566,6 @@ function enterRoom(roomId) {
     showScreen('room-waiting');
 }
 
-<<<<<<< HEAD
-=======
 async function exitCurrentRoom() {
     const roomId = state.currentRoomId;
     const uid = state.currentUser?.uid;
@@ -601,12 +592,10 @@ async function exitCurrentRoom() {
     }
 }
 
->>>>>>> 45a9519 (Misc fixes)
 async function handleRoomUpdate(data) {
     if (!data) return;
 
     // HOST-DELEGATED QUERY PROCESSING LOOP
-    // If this client is the room host, evaluate pending long-proof evaluation tickets from other players
     const isHost = data.hostUid === state.currentUser?.uid;
     if (isHost && data.pendingQueries) {
         const queryEntries = Object.entries(data.pendingQueries);
@@ -628,7 +617,8 @@ async function handleRoomUpdate(data) {
         }
     }
 
-    const players = Object.values(data.players || {});
+    // Filter out null/deleted player entries safely
+    const players = Object.values(data.players || {}).filter(Boolean);
     const playerCount = document.getElementById('waiting-player-count');
     if (playerCount) playerCount.innerText = players.length;
 
@@ -671,9 +661,9 @@ async function handleRoomUpdate(data) {
         const container = document.getElementById('live-progress-bars-container');
         if (container) {
             container.innerHTML = '';
-            const sorted = Object.values(data.players || {}).sort((a, b) => b.score - a.score);
+            const sorted = players.sort((a, b) => (b.score || 0) - (a.score || 0));
             sorted.forEach(p => {
-                const pct = Math.min(100, Math.round((p.score / (data.settings?.targetScore || 10)) * 100));
+                const pct = Math.min(100, Math.round(((p.score || 0) / (data.settings?.targetScore || 10)) * 100));
                 const isMe = p.displayName === state.userProfile.displayName;
 
                 const bar = document.createElement('div');
@@ -681,7 +671,7 @@ async function handleRoomUpdate(data) {
                 bar.innerHTML = `
                     <div class="flex justify-between text-xs font-semibold">
                         <span class="${isMe ? 'text-indigo-400 font-bold' : 'text-slate-300'}">${p.avatar || '🧮'} ${p.displayName} ${isMe ? '(You)' : ''}</span>
-                        <span class="font-mono ${isMe ? 'text-indigo-400' : 'text-slate-400'}">${p.score} / ${data.settings?.targetScore || 10}</span>
+                        <span class="font-mono ${isMe ? 'text-indigo-400' : 'text-slate-400'}">${p.score || 0} / ${data.settings?.targetScore || 10}</span>
                     </div>
                     <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
                         <div class="h-full bg-gradient-to-r ${isMe ? 'from-indigo-500 to-purple-500' : 'from-slate-600 to-slate-500'} transition-all duration-300" style="width: ${pct}%;"></div>
@@ -692,7 +682,7 @@ async function handleRoomUpdate(data) {
         }
 
         const target = data.settings?.targetScore || 10;
-        const winner = players.find(p => p.score >= target);
+        const winner = players.find(p => (p.score || 0) >= target);
         if (winner && document.getElementById('screen-results')?.classList.contains('hidden')) {
             game.concludeMatch();
         }
@@ -714,30 +704,12 @@ document.getElementById('btn-start-game')?.addEventListener('click', async () =>
     });
 });
 
-document.getElementById('btn-leave-room')?.addEventListener('click', async () => {
-    if (state.currentRoomId && state.currentUser) {
-        const patch = {};
-        patch[`players.${state.currentUser.uid}`] = null;
-        await updateRoomInDB(state.currentRoomId, patch);
-    }
-    if (state.roomUnsubscribe) state.roomUnsubscribe();
-    state.currentRoomId = null;
-    showScreen('lobby');
-    loadPublicRooms();
-});
-
 async function loadPublicRooms() {
     const container = document.getElementById('rooms-list-container');
     const countLabel = document.getElementById('rooms-count-label');
     if (!container || !countLabel) return;
 
-<<<<<<< HEAD
-    const rooms = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY_ROOMS) || '{}');
-    const roomList = Object.values(rooms).filter(r => r.status === 'waiting');
-
-=======
     const roomList = await getPublicRoomsFromDB();
->>>>>>> 45a9519 (Misc fixes)
     countLabel.innerText = `${roomList.length} room${roomList.length === 1 ? '' : 's'} available`;
     container.innerHTML = '';
 
@@ -747,7 +719,7 @@ async function loadPublicRooms() {
     }
 
     roomList.forEach(room => {
-        const playerCount = Object.keys(room.players || {}).length;
+        const playerCount = Object.keys(room.players || {}).filter(k => room.players[k]).length;
         const card = document.createElement('div');
         card.className = "glass-card p-3.5 rounded-xl border border-slate-800 hover:border-indigo-500/50 flex items-center justify-between transition cursor-pointer";
         card.innerHTML = `

@@ -1,15 +1,11 @@
 // ---------------------------------------------------------
 // FIREBASE CLOUD FIRESTORE & AUTHENTICATION ABSTRACTION
+// Configured for project: specrush
 // ---------------------------------------------------------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { 
-<<<<<<< HEAD
-    getFirestore, collection, doc, setDoc, getDoc, updateDoc, onSnapshot, 
-    serverTimestamp 
-=======
     getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteField, 
     query, where, onSnapshot, serverTimestamp 
->>>>>>> 45a9519 (Misc fixes)
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { 
     getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut 
@@ -17,10 +13,8 @@ import {
 
 export const LOCAL_STORAGE_KEY_PROFILE = 'csso_math_user_profile_v1';
 export const LOCAL_STORAGE_KEY_ROOMS = 'csso_math_mock_rooms_v1';
+export const LOCAL_STORAGE_KEY_FIREBASE_API_KEY = 'csso_firebase_api_key';
 
-<<<<<<< HEAD
-// Firebase Configuration (Fallback gracefully to local offline mode if missing)
-=======
 export const DEFAULT_FIREBASE_API_KEY = "AIzaSyBhm7I2wEcJkqEOn_XJi9XmUw-94y0Q8nw";
 
 export function getFirebaseApiKey() {
@@ -36,14 +30,13 @@ export function setFirebaseApiKey(key) {
 }
 
 // Firebase Configuration targeting project: specrush
->>>>>>> c6105a7 (Firebase api key)
 export const firebaseConfig = {
-    apiKey: "",
-    authDomain: "",
-    projectId: "",
-    storageBucket: "",
-    messagingSenderId: "",
-    appId: ""
+    apiKey: getFirebaseApiKey(),
+    authDomain: "specrush.firebaseapp.com",
+    projectId: "specrush",
+    storageBucket: "specrush.firebasestorage.app",
+    messagingSenderId: "1056581177651",
+    appId: "1:1056581177651:web:specrush"
 };
 
 export let app = null;
@@ -52,16 +45,6 @@ export let auth = null;
 export let provider = null;
 export let isFirebaseAvailable = false;
 
-<<<<<<< HEAD
-try {
-    if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "") {
-        app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        auth = getAuth(app);
-        provider = new GoogleAuthProvider();
-        isFirebaseAvailable = true;
-        console.log("Firebase initialized successfully.");
-=======
 export function initFirebase() {
     const key = getFirebaseApiKey();
     if (key && key !== "") {
@@ -89,13 +72,15 @@ export function initFirebase() {
             isFirebaseAvailable = false;
             return false;
         }
->>>>>>> 45a9519 (Misc fixes)
     } else {
-        console.warn("No Firebase API Key provided. Running in high-performance local storage mode.");
+        console.warn("No Firebase API Key provided for specrush. Running in high-performance local fallback mode.");
+        isFirebaseAvailable = false;
+        return false;
     }
-} catch (e) {
-    console.warn("Firebase initialization skipped:", e);
 }
+
+// Initial auto-initialization attempt
+initFirebase();
 
 export function getInitialStats() {
     return {
@@ -120,6 +105,17 @@ export function getInitialStats() {
     };
 }
 
+export function createFreshGuestProfile() {
+    return {
+        uid: 'guest_' + Math.random().toString(36).substr(2, 9),
+        displayName: 'Guest Mathlete',
+        avatar: '🧮',
+        elo: 1200,
+        isGuest: true,
+        stats: getInitialStats()
+    };
+}
+
 export function loadLocalProfile() {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY_PROFILE);
     if (saved) {
@@ -129,18 +125,15 @@ export function loadLocalProfile() {
             return parsed;
         } catch(e) {}
     }
-    return {
-        uid: 'guest_' + Math.random().toString(36).substr(2, 9),
-        displayName: 'Year 12 Mathlete',
-        avatar: '\ud83e\uddee',
-        elo: 1200,
-        isGuest: true,
-        stats: getInitialStats()
-    };
+    return createFreshGuestProfile();
 }
 
 export function saveLocalProfile(profile) {
     localStorage.setItem(LOCAL_STORAGE_KEY_PROFILE, JSON.stringify(profile));
+}
+
+export function clearLocalProfile() {
+    localStorage.removeItem(LOCAL_STORAGE_KEY_PROFILE);
 }
 
 export function setDeepValue(obj, path, value) {
@@ -152,7 +145,11 @@ export function setDeepValue(obj, path, value) {
         }
         current = current[keys[i]];
     }
-    current[keys[keys.length - 1]] = value;
+    if (value === null || value === undefined) {
+        delete current[keys[keys.length - 1]];
+    } else {
+        current[keys[keys.length - 1]] = value;
+    }
 }
 
 export async function saveRoomToDB(roomId, data) {
@@ -200,7 +197,11 @@ export async function getPublicRoomsFromDB() {
 export async function updateRoomInDB(roomId, patch) {
     if (isFirebaseAvailable && db) {
         try {
-            await updateDoc(doc(db, 'rooms', roomId), patch);
+            const firestorePatch = {};
+            Object.keys(patch).forEach(k => {
+                firestorePatch[k] = (patch[k] === null || patch[k] === undefined) ? deleteField() : patch[k];
+            });
+            await updateDoc(doc(db, 'rooms', roomId), firestorePatch);
             return;
         } catch(e) {
             console.warn("Firestore updateDoc failed, falling back to local:", e);
@@ -219,7 +220,9 @@ export function subscribeToRoom(roomId, callback) {
     if (isFirebaseAvailable && db) {
         try {
             return onSnapshot(doc(db, 'rooms', roomId), (snap) => {
-                if (snap.exists()) callback(snap.data());
+                if (snap.exists()) {
+                    callback(snap.data());
+                }
             });
         } catch(e) {}
     }
@@ -257,10 +260,6 @@ export async function resolveProofQueryInRoom(roomId, queryId, result) {
 }
 
 export {
-<<<<<<< HEAD
-    signInWithPopup, GoogleAuthProvider, signOut, doc, setDoc, getDoc, updateDoc, serverTimestamp
-=======
     signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, 
     doc, setDoc, getDoc, getDocs, updateDoc, deleteField, collection, query, where, serverTimestamp
->>>>>>> 45a9519 (Misc fixes)
 };
