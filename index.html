@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="icon" type="image/x-icon" href="/images/favicon.png">
     
     <!-- Polyfill for MathJax / Process -->
     <script>
@@ -118,18 +117,18 @@
                     <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xl">
                         ✨
                     </div>
-                    <h3 class="text-base font-bold text-slate-100">Host-Delegated Proofs</h3>
+                    <h3 class="text-base font-bold text-slate-100">Gemini AI Long Proofs</h3>
                     <p class="text-xs text-slate-400 leading-relaxed">
-                        Only the room host needs a Gemini API key. All participating players' proof steps are evaluated with automated AI feedback.
+                        Type complete mathematical proofs into an interactive editor evaluated rigorously by Gemini 3.7 Flash AI.
                     </p>
                 </div>
                 <div class="glass-panel p-6 rounded-2xl space-y-3">
                     <div class="w-10 h-10 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center font-bold text-xl">
-                        🤝
+                        ⌨️
                     </div>
-                    <h3 class="text-base font-bold text-slate-100">Format Customization</h3>
+                    <h3 class="text-base font-bold text-slate-100">Dual Scratchpad</h3>
                     <p class="text-xs text-slate-400 leading-relaxed">
-                        Filter by MCQ, Short Answer, Multi-Step, or Proofs. Host instantly without an API key by deselecting Proofs.
+                        Freehand draw equations or type in real-time LaTeX with instant MathJax live preview and symbol palettes.
                     </p>
                 </div>
             </div>
@@ -334,7 +333,7 @@
                                 <label class="flex items-center space-x-2 p-2 rounded-lg bg-purple-950/30 border border-purple-800/50 hover:border-purple-600 cursor-pointer">
                                     <input type="checkbox" id="cb-format-proofs" class="w-4 h-4 rounded border-slate-600 bg-slate-900 text-purple-500 focus:ring-purple-500" checked>
                                     <div class="flex flex-col">
-                                        <span class="text-xs font-bold text-purple-200">Rigorous Proofs</span>
+                                        <span class="text-xs font-bold text-purple-200">Rigorous Long Proofs</span>
                                         <span class="text-[9px] text-purple-400">Host API Key Required</span>
                                     </div>
                                 </label>
@@ -532,7 +531,7 @@
                     </div>
                 </div>
 
-                <!-- Question Prompt -->
+                <!-- Question Prompt & History -->
                 <div class="space-y-4">
                     <div id="game-question-text" class="text-lg sm:text-2xl font-bold text-white leading-relaxed block overflow-x-auto py-1">
                         Loading problem...
@@ -556,25 +555,80 @@
                             <span>Submit</span>
                         </button>
                     </div>
-                    <p class="text-[11px] text-slate-400">Press Enter or click Submit. Proof steps are automatically evaluated by the host's AI engine.</p>
+                    <p class="text-[11px] text-slate-400">Press Enter or click Submit.</p>
+                </div>
+
+                <!-- Option Type C: Single-Step Rigorous Long Proof Textarea (Gemini AI Graded) -->
+                <div id="game-long-proof-container" class="hidden space-y-3 pt-2 border-t border-purple-900/40 pt-4">
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-purple-300">
+                            Mathematical Proof Working:
+                        </label>
+                        <textarea id="long-proof-input" rows="6" placeholder="Write out your complete proof step-by-step with reasons..." class="w-full p-4 rounded-xl bg-slate-900/90 border border-purple-500/40 text-slate-100 font-mono text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-[11px] text-slate-400">Evaluated with structured rubric by Google Gemini 3.7 Flash.</span>
+                        <button id="btn-submit-long-proof" class="px-7 py-3 rounded-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg shadow-purple-600/30 transition text-sm flex items-center space-x-2">
+                            <span>Submit Proof for AI Evaluation</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Bottom Floating Scratchpad Toggle / Draw Canvas -->
+            <!-- Bottom Floating Scratchpad Toggle / Draw & LaTeX Canvas -->
             <div class="flex items-center justify-between px-2">
                 <button id="btn-toggle-scratchpad" class="text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center space-x-1.5 glass-button px-3 py-1.5 rounded-lg">
-                    <span>✏️ Toggle Scratchpad</span>
+                    <span>✏️ Toggle Scratchpad (Draw / LaTeX)</span>
                 </button>
                 <span class="text-[11px] text-slate-500 font-mono">WACE ATAR Fast-Calculation & Proof Engine</span>
             </div>
 
-            <!-- Interactive Scratchpad Drawer -->
+            <!-- Interactive Dual-Mode Scratchpad Drawer -->
             <div id="scratchpad-drawer" class="glass-panel p-4 rounded-2xl space-y-3 hidden">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-slate-300 uppercase">Working Canvas</span>
-                    <button id="btn-clear-canvas" class="text-xs text-rose-400 hover:text-rose-300 font-semibold">Clear Canvas</button>
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <div class="flex items-center space-x-2">
+                        <button id="scratchpad-tab-draw" class="px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white">🖌️ Draw Canvas</button>
+                        <button id="scratchpad-tab-latex" class="px-3 py-1 rounded-lg text-xs font-bold glass-button text-slate-400 hover:text-white">⌨️ LaTeX Typer</button>
+                    </div>
+                    <span class="text-xs text-slate-500">Working Scratchpad</span>
                 </div>
-                <canvas id="scratchpad-canvas" class="w-full h-44 bg-slate-900/90 rounded-xl border border-slate-700 cursor-crosshair"></canvas>
+
+                <!-- Mode 1: Freehand Drawing Canvas -->
+                <div id="scratchpad-view-draw" class="space-y-2">
+                    <div class="flex justify-end">
+                        <button id="btn-clear-canvas" class="text-xs text-rose-400 hover:text-rose-300 font-semibold">Clear Canvas</button>
+                    </div>
+                    <canvas id="scratchpad-canvas" class="w-full h-44 bg-slate-900/90 rounded-xl border border-slate-700 cursor-crosshair"></canvas>
+                </div>
+
+                <!-- Mode 2: Interactive LaTeX / MathJax Typer with Live Preview -->
+                <div id="scratchpad-view-latex" class="space-y-3 hidden">
+                    <!-- Quick Math Notation Palette -->
+                    <div class="flex flex-wrap gap-1.5 text-xs font-mono">
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="\frac{a}{b}">\frac{a}{b}</button>
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="\sqrt{x}">\sqrt{x}</button>
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="^2">x²</button>
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="\int_{a}^{b}">\int</button>
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="\vec{u}">\vec{u}</button>
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="\theta">\theta</button>
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="\pi">\pi</button>
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="\cos(x)">\cos</button>
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="\sin(x)">\sin</button>
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="\cdot">\cdot</button>
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="\pm">\pm</button>
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="\le">\le</button>
+                        <button class="scratch-sym-btn px-2 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition" data-latex="\ge">\ge</button>
+                        <button id="btn-clear-latex" class="px-2 py-1 rounded bg-rose-900/40 text-rose-300 hover:bg-rose-800/60 ml-auto transition">Clear</button>
+                    </div>
+
+                    <!-- LaTeX Input Textarea -->
+                    <textarea id="scratchpad-latex-input" rows="3" placeholder="Type LaTeX math (e.g. f'(x) = 3x^2 + \frac{1}{x} or \vec{u} \cdot \vec{v} = 0)..." class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    
+                    <!-- Live MathJax Preview Box -->
+                    <div class="p-3 rounded-xl bg-slate-900/70 border border-slate-800 min-h-[50px] flex items-center justify-center text-indigo-200 overflow-x-auto" id="scratchpad-latex-preview">
+                        <span class="text-xs text-slate-500 italic">Live rendered LaTeX math appears here...</span>
+                    </div>
+                </div>
             </div>
         </section>
 
