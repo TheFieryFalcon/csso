@@ -3,8 +3,13 @@
 // ---------------------------------------------------------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { 
+<<<<<<< HEAD
     getFirestore, collection, doc, setDoc, getDoc, updateDoc, onSnapshot, 
     serverTimestamp 
+=======
+    getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteField, 
+    query, where, onSnapshot, serverTimestamp 
+>>>>>>> 45a9519 (Misc fixes)
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { 
     getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut 
@@ -23,7 +28,7 @@ export function getFirebaseApiKey() {
 }
 
 export function setFirebaseApiKey(key) {
-    if (key) {
+    if (key && key.trim()) {
         localStorage.setItem(LOCAL_STORAGE_KEY_FIREBASE_API_KEY, key.trim());
     } else {
         localStorage.removeItem(LOCAL_STORAGE_KEY_FIREBASE_API_KEY);
@@ -47,6 +52,7 @@ export let auth = null;
 export let provider = null;
 export let isFirebaseAvailable = false;
 
+<<<<<<< HEAD
 try {
     if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "") {
         app = initializeApp(firebaseConfig);
@@ -55,6 +61,35 @@ try {
         provider = new GoogleAuthProvider();
         isFirebaseAvailable = true;
         console.log("Firebase initialized successfully.");
+=======
+export function initFirebase() {
+    const key = getFirebaseApiKey();
+    if (key && key !== "") {
+        try {
+            firebaseConfig.apiKey = key;
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            provider = new GoogleAuthProvider();
+            isFirebaseAvailable = true;
+            console.log("Connected to Firebase project: specrush");
+            return true;
+        } catch (e) {
+            console.warn("Firebase initialization note:", e);
+            // If already initialized, recover existing instances
+            if (e.code === 'app/duplicate-app' || (e.message && e.message.includes('already exists'))) {
+                try {
+                    db = getFirestore();
+                    auth = getAuth();
+                    provider = new GoogleAuthProvider();
+                    isFirebaseAvailable = true;
+                    return true;
+                } catch(err) {}
+            }
+            isFirebaseAvailable = false;
+            return false;
+        }
+>>>>>>> 45a9519 (Misc fixes)
     } else {
         console.warn("No Firebase API Key provided. Running in high-performance local storage mode.");
     }
@@ -145,6 +180,23 @@ export async function getRoomFromDB(roomId) {
     return rooms[roomId] || null;
 }
 
+export async function getPublicRoomsFromDB() {
+    if (isFirebaseAvailable && db) {
+        try {
+            const roomsCol = collection(db, 'rooms');
+            const q = query(roomsCol, where('status', '==', 'waiting'));
+            const snap = await getDocs(q);
+            const firestoreRooms = [];
+            snap.forEach(d => firestoreRooms.push(d.data()));
+            if (firestoreRooms.length > 0) return firestoreRooms;
+        } catch (e) {
+            console.warn("Firestore getPublicRooms query warning, checking local storage:", e);
+        }
+    }
+    const rooms = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY_ROOMS) || '{}');
+    return Object.values(rooms).filter(r => r && r.status === 'waiting');
+}
+
 export async function updateRoomInDB(roomId, patch) {
     if (isFirebaseAvailable && db) {
         try {
@@ -205,5 +257,10 @@ export async function resolveProofQueryInRoom(roomId, queryId, result) {
 }
 
 export {
+<<<<<<< HEAD
     signInWithPopup, GoogleAuthProvider, signOut, doc, setDoc, getDoc, updateDoc, serverTimestamp
+=======
+    signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, 
+    doc, setDoc, getDoc, getDocs, updateDoc, deleteField, collection, query, where, serverTimestamp
+>>>>>>> 45a9519 (Misc fixes)
 };

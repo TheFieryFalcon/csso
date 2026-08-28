@@ -49,6 +49,17 @@
 
             <!-- Top Nav Links & User Profile Badge -->
             <div class="flex items-center space-x-3">
+                <!-- Persistent Active Room Leave Button (shown dynamically when inside a room/match) -->
+                <button id="nav-btn-leave-room" class="hidden px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-lg shadow-rose-600/30 transition transform hover:scale-105">
+                    <span>🚪 Leave Room</span>
+                </button>
+
+                <!-- Cloud Status Indicator -->
+                <div id="nav-cloud-status" class="hidden sm:inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span id="nav-cloud-label">specrush Cloud</span>
+                </div>
+
                 <button id="nav-btn-landing" class="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition">
                     <span>Overview</span>
                 </button>
@@ -119,7 +130,7 @@
                     </div>
                     <h3 class="text-base font-bold text-slate-100">Gemini AI Long Proofs</h3>
                     <p class="text-xs text-slate-400 leading-relaxed">
-                        Type complete mathematical proofs into an interactive editor evaluated rigorously by Gemini 3.7 Flash AI.
+                        Type complete mathematical proofs evaluated by Gemini with automatic Flash-Lite fallback under peak demand.
                     </p>
                 </div>
                 <div class="glass-panel p-6 rounded-2xl space-y-3">
@@ -237,17 +248,45 @@
                 </div>
             </div>
 
+<<<<<<< HEAD
             <!-- Gemini 3.7 Flash AI Proof Evaluator Settings -->
+=======
+            <!-- Firebase Authentication Config (specrush) -->
+            <div class="glass-panel p-5 rounded-2xl space-y-3 border border-indigo-500/30">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-lg">🔥</span>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-300">Firebase Auth & DB (specrush)</h3>
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono">specrush.firebaseapp.com</span>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Connected to Firebase project <strong>specrush</strong>. Paste your Firebase Web API Key below from <a href="https://console.firebase.google.com/u/0/project/specrush/authentication" target="_blank" class="text-indigo-400 underline font-semibold">Firebase Console &rarr; specrush</a> to enable cloud sync, user logins, and multi-device rank persistence.
+                </p>
+                <div class="flex items-center space-x-2 pt-1">
+                    <input type="password" id="input-firebase-key" placeholder="AIzaSy... (Firebase Web API Key)" class="flex-grow px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button id="btn-save-firebase-key" class="px-4 py-2 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white text-xs transition">
+                        Connect Firebase
+                    </button>
+                </div>
+            </div>
+
+            <!-- Gemini 3.7 Flash & Flash-Lite Proof Evaluator Settings -->
+>>>>>>> 45a9519 (Misc fixes)
             <div class="glass-panel p-5 rounded-2xl space-y-3 border border-purple-500/30">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                         <span class="text-lg">✨</span>
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-purple-300">Host Gemini 3.7 Flash Proof Key</h3>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-purple-300">Host Gemini AI Proof Key</h3>
                     </div>
-                    <span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">Room AI Processor</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">3.7 Flash + Flash-Lite 503 Fallback</span>
                 </div>
                 <p class="text-xs text-slate-400 leading-relaxed">
+<<<<<<< HEAD
                     Provide a Google Gemini API Key if you wish to host multiplayer matches or practice solo runs with <strong>Rigorous Mathematical Proofs</strong> enabled. When hosting, your API key automatically processes proof steps for all players in your room!
+=======
+                    Provide a Google Gemini API Key if you wish to host multiplayer matches or practice solo runs with <strong>Rigorous Long Proofs</strong> enabled. When hosting, your key automatically grades proofs with Flash-Lite fallback during peak demand spikes!
+>>>>>>> 45a9519 (Misc fixes)
                 </p>
                 <div class="flex items-center space-x-2 pt-1">
                     <input type="password" id="input-gemini-key" placeholder="AIzaSy... (Gemini API Key)" class="flex-grow px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-purple-500">
@@ -447,14 +486,20 @@
         <!-- SCREEN 4: ROOM WAITING LOBBY -->
         <!-- ========================================================================= -->
         <section id="screen-room-waiting" class="w-full max-w-2xl glass-panel p-8 rounded-2xl shadow-2xl space-y-6 hidden transition-all duration-300">
+            <!-- Header with Room PIN, Target Score, and Top Leave Button -->
             <div class="flex items-center justify-between border-b border-slate-800 pb-4">
                 <div>
                     <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Match Room</span>
                     <h2 id="waiting-room-title" class="text-2xl font-black text-white font-mono">ROOM #---</h2>
                 </div>
-                <div class="text-right">
-                    <span class="text-xs text-slate-400 block">First to</span>
-                    <span id="waiting-target-score" class="text-lg font-black text-indigo-400 font-mono">10 Pts</span>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <span class="text-xs text-slate-400 block">First to</span>
+                        <span id="waiting-target-score" class="text-lg font-black text-indigo-400 font-mono">10 Pts</span>
+                    </div>
+                    <button id="btn-leave-room-top" class="px-3 py-1.5 rounded-xl bg-rose-600/20 text-rose-300 border border-rose-500/30 hover:bg-rose-600/40 text-xs font-bold transition">
+                        ✕ Leave
+                    </button>
                 </div>
             </div>
 
@@ -472,9 +517,9 @@
                 </div>
             </div>
 
-            <!-- Host Actions -->
+            <!-- Host Actions & Bottom Leave Button -->
             <div class="pt-4 border-t border-slate-800 flex items-center justify-between gap-4">
-                <button id="btn-leave-room" class="px-5 py-2.5 rounded-xl font-semibold glass-button text-slate-300 hover:text-rose-400 text-xs">
+                <button id="btn-leave-room" class="px-5 py-2.5 rounded-xl font-semibold bg-rose-950/40 text-rose-300 border border-rose-800/40 hover:bg-rose-900/60 text-xs transition">
                     Leave Lobby
                 </button>
                 <button id="btn-start-game" class="px-8 py-3 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/20 transition text-sm flex items-center space-x-2">
@@ -495,7 +540,16 @@
                         <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
                         <span id="game-room-indicator">Live Match</span>
                     </span>
+<<<<<<< HEAD
                     <span class="font-mono text-indigo-400 font-bold" id="game-target-indicator">Goal: 10 pts</span>
+=======
+                    <div class="flex items-center space-x-3">
+                        <span class="font-mono text-indigo-400 font-bold" id="game-target-indicator">Goal: 10 pts</span>
+                        <button id="btn-game-leave" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md transition">
+                            Leave Match
+                        </button>
+                    </div>
+>>>>>>> 45a9519 (Misc fixes)
                 </div>
                 <!-- Dynamic Player Progress Bars -->
                 <div id="live-progress-bars-container" class="space-y-2 pt-1">
@@ -567,7 +621,7 @@
                         <textarea id="long-proof-input" rows="6" placeholder="Write out your complete proof step-by-step with reasons..." class="w-full p-4 rounded-xl bg-slate-900/90 border border-purple-500/40 text-slate-100 font-mono text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
                     </div>
                     <div class="flex items-center justify-between pt-1">
-                        <span class="text-[11px] text-slate-400">Evaluated with structured rubric by Google Gemini 3.7 Flash.</span>
+                        <span class="text-[11px] text-slate-400">Evaluated with structured rubric by Google Gemini (with Flash-Lite fallback).</span>
                         <button id="btn-submit-long-proof" class="px-7 py-3 rounded-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg shadow-purple-600/30 transition text-sm flex items-center space-x-2">
                             <span>Submit Proof for AI Evaluation</span>
                         </button>
@@ -675,7 +729,7 @@
 
     <!-- Footer -->
     <footer class="w-full border-t border-slate-900 bg-slate-950/80 backdrop-blur text-center py-4 text-xs text-slate-500 z-10">
-        <p>WACE Math Rush &bull; Western Australian Certificate of Education Competitive Training Platform &bull; Powered by Gemini 3.7 Flash</p>
+        <p>WACE Math Rush &bull; Western Australian Certificate of Education Competitive Training Platform &bull; Powered by Gemini 3.7 Flash & Flash-Lite</p>
     </footer>
 
     <!-- Global Toast Alert Message Container (Centered Bottom) -->
