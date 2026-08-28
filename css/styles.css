@@ -1,0 +1,90 @@
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.font-mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+/* Custom scrollbar for modern sleek look */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.4);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.8);
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.glass-card {
+    background: rgba(30, 41, 59, 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.glass-button {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+.glass-button:active {
+    transform: translateY(0);
+}
+
+/* MathJax Inline Text Flow Formatting Fix */
+mjx-container[jax="CHTML"]:not([display="true"]) {
+    display: inline-block !important;
+    margin: 0 0.18em !important;
+    vertical-align: -0.12em !important;
+    line-height: normal !important;
+}
+mjx-container[jax="CHTML"][display="true"] {
+    display: block !important;
+    margin: 0.75em 0 !important;
+}
+
+/* Pulse glow animation for leaders */
+@keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.2); }
+    50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.6); }
+}
+.leader-glow {
+    animation: glow-pulse 3s infinite;
+}
+
+/* Shake animation for wrong answers */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+.animate-shake {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* AI Feedback Badge Pulse */
+@keyframes ai-pulse {
+    0%, 100% { opacity: 0.9; }
+    50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.4)); }
+}
+.ai-glow {
+    animation: ai-pulse 2s infinite ease-in-out;
+}
