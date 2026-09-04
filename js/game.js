@@ -1,10 +1,11 @@
 // ---------------------------------------------------------
-// GAME MATCH ENGINE: MULTI-STEP HISTORY & PROOF VALIDATION
+// GAME MATCH ENGINE: MULTI-STEP HISTORY, PROOFS & ELO RATING
 // ---------------------------------------------------------
 import { questionDB } from './questions/questionDB.js';
-import { updateRoomInDB, saveLocalProfile, getInitialStats, submitProofQueryToRoom, getRoomFromDB } from './firebase.js';
+import { updateRoomInDB, saveLocalProfile, getInitialStats, submitProofQueryToRoom, getRoomFromDB, doc, setDoc, db, serverTimestamp } from './firebase.js';
 import { evaluateProofStepWithGemini, fallbackLocalProofEvaluator } from './gemini.js';
 import { showToast, showScreen } from './ui.js';
+import { calculateMultiplayerElo, calculateSoloPracticeElo } from './elo.js';
 
 export class GameEngine {
     constructor(state) {
@@ -16,6 +17,8 @@ export class GameEngine {
         this.wrongAttemptsOnCurrentQuestion = 0;
         this.localScore = 0;
         this.targetScore = 10;
+        this.sessionAnswered = 0;
+        this.sessionCorrect = 0;
         this.isAnswerCooldown = false;
         this.isAwaitingHostEvaluation = false;
         this.isSolo = false;
@@ -28,6 +31,8 @@ export class GameEngine {
         this.completedSteps = [];
         this.wrongAttemptsOnCurrentQuestion = 0;
         this.localScore = 0;
+        this.sessionAnswered = 0;
+        this.sessionCorrect = 0;
         this.targetScore = targetScore || 10;
         this.isAnswerCooldown = false;
         this.isAwaitingHostEvaluation = false;
@@ -381,6 +386,7 @@ export class GameEngine {
             return;
         }
 
+        this.sessionAnswered++;
         const userProfile = this.state.userProfile;
         if (!userProfile.stats) userProfile.stats = getInitialStats();
         userProfile.stats.totalAnswered = (userProfile.stats.totalAnswered || 0) + 1;
@@ -392,6 +398,7 @@ export class GameEngine {
         userProfile.stats.topicStats[q.topic].answered = (userProfile.stats.topicStats[q.topic].answered || 0) + 1;
 
         if (isCorrect) {
+            this.sessionCorrect++;
             this.wrongAttemptsOnCurrentQuestion = 0;
             userProfile.stats.totalCorrect = (userProfile.stats.totalCorrect || 0) + 1;
             userProfile.stats.topicStats[q.topic].correct = (userProfile.stats.topicStats[q.topic].correct || 0) + 1;
@@ -491,48 +498,129 @@ export class GameEngine {
         saveLocalProfile(userProfile);
     }
 
-    concludeMatch() {
+    async concludeMatch() {
         const isWinner = this.localScore >= this.targetScore;
         const userProfile = this.state.userProfile;
+        const oldElo = userProfile.elo || 1200;
 
         if (isWinner && window.confetti) {
             window.confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
         }
 
-        const oldElo = userProfile.elo || 1200;
-        const delta = isWinner ? 32 : -16;
-        const newElo = Math.max(800, oldElo + delta);
+        let delta = 0;
+        let newElo = oldElo;
+        let expectedPct = 50;
+        let actualPct = 100;
+        let standingsData = [];
 
+        if (!this.isSolo && this.state.currentRoomId && this.state.roomData?.players) {
+            // Multiplayer Real Elo Calculation
+            const playersMap = this.state.roomData.players;
+            const playersList = Object.entries(playersMap)
+                .filter(([uid, p]) => p && typeof p === 'object')
+                .map(([uid, p]) => ({
+                    uid,
+                    displayName: p.displayName || 'Player',
+                    avatar: p.avatar || '🧮',
+                    rating: p.elo || 1200,
+                    score: uid === this.state.currentUser?.uid ? this.localScore : (p.score || 0),
+                    matchesPlayed: p.matchesPlayed || 20
+                }));
+
+            const eloResults = calculateMultiplayerElo(playersList);
+            const myEloResult = eloResults[this.state.currentUser?.uid];
+
+            if (myEloResult) {
+                delta = myEloResult.delta;
+                newElo = myEloResult.newRating;
+                expectedPct = Math.round(myEloResult.expectedScore * 100);
+                actualPct = Math.round(myEloResult.actualScore * 100);
+            }
+
+            // Standings list sorted by score
+            standingsData = playersList.sort((a, b) => b.score - a.score);
+
+            // Update room in Firestore
+            await updateRoomInDB(this.state.currentRoomId, {
+                status: 'finished',
+                [`players.${this.state.currentUser?.uid}.score`]: this.localScore,
+                [`players.${this.state.currentUser?.uid}.eloDelta`]: delta,
+                [`players.${this.state.currentUser?.uid}.newElo`]: newElo
+            });
+
+        } else {
+            // Solo Practice Mathematical Elo Calculation
+            const soloElo = calculateSoloPracticeElo(oldElo, this.targetScore, this.sessionAnswered, this.sessionCorrect);
+            delta = soloElo.delta;
+            newElo = soloElo.newRating;
+            expectedPct = 75;
+            actualPct = soloElo.accuracy;
+
+            standingsData = [{
+                displayName: userProfile.displayName,
+                avatar: userProfile.avatar,
+                score: this.localScore
+            }];
+        }
+
+        // Persist user profile and updated Elo
         userProfile.elo = newElo;
         if (!userProfile.stats) userProfile.stats = getInitialStats();
         userProfile.stats.matchesPlayed = (userProfile.stats.matchesPlayed || 0) + 1;
         if (isWinner) userProfile.stats.matchesWon = (userProfile.stats.matchesWon || 0) + 1;
         saveLocalProfile(userProfile);
 
+        // Sync updated Elo to Firestore users collection
+        if (db && this.state.currentUser?.uid) {
+            try {
+                await setDoc(doc(db, 'users', this.state.currentUser.uid), {
+                    elo: newElo,
+                    stats: userProfile.stats,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+            } catch (e) {
+                console.warn("Firestore Elo save note:", e);
+            }
+        }
+
+        // Render Results Screen
         document.getElementById('results-winner-emoji').innerText = isWinner ? '🏆' : '🥈';
-        document.getElementById('results-headline').innerText = isWinner ? 'Completed' : 'Session Summary';
-        document.getElementById('results-subtext').innerText = isWinner ? 'Target score reached.' : 'Session ended.';
+        document.getElementById('results-headline').innerText = isWinner ? 'Victory' : 'Match Concluded';
+        document.getElementById('results-subtext').innerText = isWinner ? 'Target score achieved.' : 'Match completed.';
         document.getElementById('results-old-elo').innerText = oldElo;
         document.getElementById('results-new-elo').innerText = newElo;
 
+        const formulaLabel = document.getElementById('results-elo-formula-label');
+        if (formulaLabel) {
+            formulaLabel.innerText = this.isSolo ? "Solo Performance Elo" : "FIDE Pairwise Multiplayer Elo";
+        }
+
+        const expEl = document.getElementById('results-elo-expected');
+        const actEl = document.getElementById('results-elo-actual');
+        if (expEl) expEl.innerText = `${expectedPct}%`;
+        if (actEl) actEl.innerText = `${actualPct}%`;
+
         const deltaEl = document.getElementById('results-elo-delta');
-        deltaEl.innerText = `${delta > 0 ? '+' : ''}${delta}`;
-        deltaEl.className = `px-1.5 py-0.5 rounded text-[11px] font-medium ${delta > 0 ? 'bg-emerald-500/10 text-emerald-300' : 'bg-rose-500/10 text-rose-300'}`;
+        deltaEl.innerText = `${delta >= 0 ? '+' : ''}${delta}`;
+        deltaEl.className = `px-2 py-1 rounded text-xs font-bold ${delta >= 0 ? 'bg-emerald-500/10 text-emerald-300' : 'bg-rose-500/10 text-rose-300'} text-center mt-0.5`;
 
         const standingsList = document.getElementById('results-standings-list');
-        standingsList.innerHTML = `
-            <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
-                <div class="flex items-center space-x-2">
-                    <span class="font-medium text-slate-400 font-mono">1.</span>
-                    <span>${userProfile.avatar || '🧮'}</span>
-                    <span class="font-medium text-slate-200">${userProfile.displayName}</span>
-                </div>
-                <span class="font-mono text-indigo-400 font-medium">${this.localScore} pts</span>
-            </div>
-        `;
-
-        if (!this.isSolo && this.state.currentRoomId) {
-            updateRoomInDB(this.state.currentRoomId, { status: 'finished' });
+        if (standingsList) {
+            standingsList.innerHTML = '';
+            standingsData.forEach((p, idx) => {
+                const isMe = p.displayName === userProfile.displayName;
+                const row = document.createElement('div');
+                row.className = `flex items-center justify-between p-2.5 rounded-lg ${isMe ? 'bg-indigo-950/40 border border-indigo-500/30' : 'bg-slate-900 border border-slate-800'} text-xs`;
+                row.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="font-medium text-slate-400 font-mono">${idx + 1}.</span>
+                        <span>${p.avatar || '🧮'}</span>
+                        <span class="font-medium ${isMe ? 'text-indigo-300 font-bold' : 'text-slate-200'}">${p.displayName} ${isMe ? '(You)' : ''}</span>
+                    </div>
+                    <span class="font-mono text-indigo-400 font-medium">${p.score} pts</span>
+                `;
+                standingsList.appendChild(row);
+            });
         }
 
         showScreen('results');

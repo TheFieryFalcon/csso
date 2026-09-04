@@ -14,7 +14,7 @@ import {
 
 export const LOCAL_STORAGE_KEY_PROFILE = 'csso_math_user_profile_v1';
 
-// Firebase Configuration strictly for project: specrush
+// Unified Firebase Configuration strictly for project: specrush
 export const firebaseConfig = {
     apiKey: "AIzaSyBhm7I2wEcJkqEOn_XJi9XmUw-94y0Q8nw",
     authDomain: "specrush.firebaseapp.com",
@@ -37,7 +37,7 @@ export function initFirebase() {
         auth = getAuth(app);
         googleProvider = new GoogleAuthProvider();
         isFirebaseAvailable = true;
-        console.log("Connected to Firebase: specrush");
+        console.log("Connected to specrush Firebase cloud database.");
         return true;
     } catch (e) {
         if (e.code === 'app/duplicate-app' || (e.message && e.message.includes('already exists'))) {
@@ -59,15 +59,22 @@ export function initFirebase() {
 initFirebase();
 
 // ---------------------------------------------------------
-// AUTHENTICATION PROVIDERS (ANONYMOUS, EMAIL, GOOGLE)
+// AUTHENTICATION PROVIDERS & SESSION RECOVERY
 // ---------------------------------------------------------
 
-/**
- * Setup Auth Observer
- */
 export function setupAuthObserver(callback) {
     if (!auth) return () => {};
     return onAuthStateChanged(auth, callback);
+}
+
+/**
+ * Ensures an active Firebase user exists before database operations
+ */
+export async function ensureAuthUser() {
+    if (!auth) throw new Error("Firebase Auth is not initialized.");
+    if (auth.currentUser) return auth.currentUser;
+    const cred = await signInAnonymously(auth);
+    return cred.user;
 }
 
 /**
@@ -113,7 +120,7 @@ export async function authSignOut() {
 }
 
 // ---------------------------------------------------------
-// PROFILE & STATS HELPERS
+// USER PROFILES & FIRST-TIME USERNAME TRACKING
 // ---------------------------------------------------------
 export function getInitialStats() {
     return {
@@ -158,6 +165,31 @@ export function clearLocalProfile() {
     localStorage.removeItem(LOCAL_STORAGE_KEY_PROFILE);
 }
 
+export async function checkUserHasCustomUsername(uid) {
+    if (!db || !uid) return false;
+    try {
+        const snap = await getDoc(doc(db, 'users', uid));
+        if (snap.exists()) {
+            const data = snap.data();
+            return Boolean(data.isUsernameSet && data.displayName);
+        }
+    } catch(e) {
+        console.warn("checkUserHasCustomUsername error:", e);
+    }
+    return false;
+}
+
+export async function updateUserUsername(uid, username, avatar = '🧮') {
+    if (!db || !uid) return;
+    const userRef = doc(db, 'users', uid);
+    await setDoc(userRef, {
+        displayName: username,
+        avatar: avatar,
+        isUsernameSet: true,
+        updatedAt: serverTimestamp()
+    }, { merge: true });
+}
+
 export async function syncUserProfileWithFirestore(user, customName = null) {
     if (!db || !user) return;
     try {
@@ -166,12 +198,13 @@ export async function syncUserProfileWithFirestore(user, customName = null) {
         if (!snap.exists()) {
             await setDoc(userRef, {
                 uid: user.uid,
-                displayName: customName || user.displayName || 'Mathlete',
+                displayName: customName || `Mathlete_${user.uid.slice(-4).toUpperCase()}`,
                 email: user.email || null,
                 avatar: '🧮',
                 elo: 1200,
                 stats: getInitialStats(),
                 isAnonymous: user.isAnonymous || false,
+                isUsernameSet: Boolean(customName),
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
@@ -203,7 +236,7 @@ export async function syncQuestionsToFirestore(questionsArray, userProfile) {
 }
 
 // ---------------------------------------------------------
-// CLOUD FIRESTORE MULTIPLAYER ROOMS (BULLETPROOF WITH MERGE)
+// UNIFIED SPEC-RUSH CLOUD FIRESTORE MULTIPLAYER ROOMS
 // ---------------------------------------------------------
 export function expandDotNotation(obj) {
     const result = {};
@@ -224,12 +257,14 @@ export function expandDotNotation(obj) {
 
 export async function saveRoomToDB(roomId, data) {
     if (!db) throw new Error("Firestore database is unavailable.");
-    await setDoc(doc(db, 'rooms', roomId), data);
+    const cleanId = String(roomId).trim();
+    await setDoc(doc(db, 'rooms', cleanId), data);
 }
 
 export async function getRoomFromDB(roomId) {
     if (!db) throw new Error("Firestore database is unavailable.");
-    const snap = await getDoc(doc(db, 'rooms', roomId));
+    const cleanId = String(roomId).trim();
+    const snap = await getDoc(doc(db, 'rooms', cleanId));
     if (snap.exists()) return snap.data();
     return null;
 }
@@ -244,29 +279,22 @@ export async function getPublicRoomsFromDB() {
         snap.forEach(d => rooms.push(d.data()));
         return rooms;
     } catch (e) {
-        console.warn("Error fetching rooms from Firestore:", e);
+        console.warn("Error querying public rooms from specrush:", e);
         return [];
     }
 }
 
 export async function updateRoomInDB(roomId, patch) {
     if (!db) throw new Error("Firestore database is unavailable.");
-    try {
-        const firestorePatch = {};
-        Object.keys(patch).forEach(k => {
-            firestorePatch[k] = (patch[k] === null || patch[k] === undefined) ? deleteField() : patch[k];
-        });
-        await updateDoc(doc(db, 'rooms', roomId), firestorePatch);
-    } catch (e) {
-        // Resilient fallback using setDoc merge
-        const expanded = expandDotNotation(patch);
-        await setDoc(doc(db, 'rooms', roomId), expanded, { merge: true });
-    }
+    const cleanId = String(roomId).trim();
+    const expanded = expandDotNotation(patch);
+    await setDoc(doc(db, 'rooms', cleanId), expanded, { merge: true });
 }
 
 export function subscribeToRoom(roomId, callback, onError) {
     if (!db) throw new Error("Firestore database is unavailable.");
-    return onSnapshot(doc(db, 'rooms', roomId), (snap) => {
+    const cleanId = String(roomId).trim();
+    return onSnapshot(doc(db, 'rooms', cleanId), (snap) => {
         if (snap.exists()) {
             callback(snap.data());
         }

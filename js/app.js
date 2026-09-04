@@ -5,6 +5,7 @@ import {
     loadSavedProfile, saveLocalProfile, clearLocalProfile, getInitialStats,
     isFirebaseAvailable, auth, db,
     setupAuthObserver, authSignInAnonymous, authSignInEmail, authSignInGoogle, authSignOut,
+    checkUserHasCustomUsername, updateUserUsername,
     syncUserProfileWithFirestore, syncQuestionsToFirestore,
     saveRoomToDB, getRoomFromDB, getPublicRoomsFromDB, updateRoomInDB, subscribeToRoom,
     resolveProofQueryInRoom, doc, setDoc, getDoc, updateDoc, serverTimestamp
@@ -161,9 +162,10 @@ function setupAuthHandlers() {
             await completeAuthentication({
                 uid: user.uid,
                 displayName: user.displayName || 'Google Mathlete',
-                email: user.email
+                email: user.email,
+                isGoogleAuth: true
             });
-            showToast(`Welcome, ${user.displayName || 'Mathlete'}`);
+            showToast(`Welcome, ${state.userProfile.displayName || 'Mathlete'}`);
         } catch (err) {
             console.error("Google Auth error:", err);
             if (err.code === 'auth/unauthorized-domain') {
@@ -215,11 +217,56 @@ function setupAuthHandlers() {
     });
 }
 
+function promptForCustomUsername(defaultName = '') {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('modal-username-setup');
+        const input = document.getElementById('input-setup-username');
+        const form = document.getElementById('form-setup-username');
+
+        if (!modal || !input || !form) {
+            resolve(defaultName || `Mathlete_${Math.floor(1000 + Math.random() * 9000)}`);
+            return;
+        }
+
+        if (defaultName) input.value = defaultName;
+        modal.classList.remove('hidden');
+        input.focus();
+
+        const onSubmit = (e) => {
+            if (e) e.preventDefault();
+            const chosen = input.value.trim();
+            if (chosen.length > 0) {
+                form.removeEventListener('submit', onSubmit);
+                modal.classList.add('hidden');
+                resolve(chosen);
+            }
+        };
+
+        form.addEventListener('submit', onSubmit);
+    });
+}
+
 async function completeAuthentication(userObj) {
     state.currentUser = userObj;
+    let chosenDisplayName = userObj.displayName;
+
+    // Check if user is logging in with Google for the first time without custom username
+    if (db && userObj.uid && userObj.isGoogleAuth) {
+        try {
+            const hasCustom = await checkUserHasCustomUsername(userObj.uid);
+            if (!hasCustom) {
+                const suggestedName = userObj.displayName ? userObj.displayName.split(' ')[0] : 'Mathlete';
+                chosenDisplayName = await promptForCustomUsername(suggestedName);
+                await updateUserUsername(userObj.uid, chosenDisplayName, state.userProfile.avatar || '🧮');
+            }
+        } catch (err) {
+            console.warn("Username check note:", err);
+        }
+    }
+
     state.userProfile = {
         uid: userObj.uid,
-        displayName: userObj.displayName,
+        displayName: chosenDisplayName || userObj.displayName || 'Mathlete',
         avatar: state.userProfile.avatar || '🧮',
         elo: state.userProfile.elo || 1200,
         stats: state.userProfile.stats || getInitialStats()
@@ -228,10 +275,11 @@ async function completeAuthentication(userObj) {
     // Sync and load statistics from Firestore
     if (db && userObj.uid) {
         try {
-            await syncUserProfileWithFirestore(userObj, userObj.displayName);
+            await syncUserProfileWithFirestore(userObj, chosenDisplayName);
             const userDoc = await getDoc(doc(db, 'users', userObj.uid));
             if (userDoc.exists()) {
                 const data = userDoc.data();
+                if (data.displayName) state.userProfile.displayName = data.displayName;
                 state.userProfile.elo = data.elo || 1200;
                 state.userProfile.avatar = data.avatar || '🧮';
                 state.userProfile.stats = data.stats || getInitialStats();

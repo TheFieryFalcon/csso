@@ -28,7 +28,7 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white relative overflow-x-hidden">
 
-    <!-- Ambient Subtle Background Glows -->
+    <!-- Ambient Background Glows -->
     <div class="fixed top-0 left-1/3 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
     <div class="fixed bottom-0 right-1/3 w-96 h-96 bg-purple-600/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
@@ -54,7 +54,7 @@
 
                 <div id="nav-cloud-status" class="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span id="nav-cloud-label">Cloud Sync</span>
+                    <span id="nav-cloud-label">specrush Cloud</span>
                 </div>
 
                 <button id="nav-btn-landing" class="hidden sm:inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition">
@@ -123,9 +123,9 @@
                     </p>
                 </div>
                 <div class="glass-panel p-5 rounded-xl space-y-2">
-                    <div class="text-sm font-semibold text-slate-200">Built-in Scratchpad</div>
+                    <div class="text-sm font-semibold text-slate-200">Mathematical Elo Ranking</div>
                     <p class="text-xs text-slate-400 leading-relaxed">
-                        Freehand drawing canvas and live LaTeX notation typer for working out solutions.
+                        Pairwise competitive Elo rating calculations synced directly to your cloud profile on specrush.
                     </p>
                 </div>
             </div>
@@ -194,9 +194,11 @@
                             <h2 id="profile-name-display" class="text-xl font-bold text-white">Player</h2>
                             <span id="profile-tier-badge" class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-slate-800 text-slate-300 border border-slate-700">Student</span>
                         </div>
-                        <p id="profile-email-display" class="text-xs text-slate-400">Authenticated Account</p>
-                        <div class="text-xs text-slate-400 pt-0.5">
-                            Rating: <strong id="profile-elo-display" class="text-indigo-400 font-mono font-medium">1200</strong>
+                        <p id="profile-email-display" class="text-xs text-slate-400">Authenticated specrush Profile</p>
+                        <div class="text-xs text-slate-400 pt-0.5 flex items-center space-x-2">
+                            <span>Rating: <strong id="profile-elo-display" class="text-indigo-400 font-mono font-medium">1200</strong></span>
+                            <span>•</span>
+                            <span id="profile-elo-tier-label" class="text-slate-300">Division II</span>
                         </div>
                     </div>
                 </div>
@@ -220,7 +222,7 @@
                 <div class="grid grid-cols-6 sm:grid-cols-12 gap-1.5" id="avatar-options-grid"></div>
             </div>
 
-            <!-- Gemini API Settings (Optional Host Key for Proof Evaluation) -->
+            <!-- Gemini API Settings -->
             <div class="glass-panel p-4 rounded-xl space-y-2">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-semibold text-slate-200">Gemini API Key (Optional Proof Evaluator)</span>
@@ -252,7 +254,7 @@
                     <p id="stat-matches-won" class="text-xl font-bold text-indigo-400 font-mono">0</p>
                 </div>
                 <div class="glass-card p-3.5 rounded-xl space-y-0.5">
-                    <span class="text-[11px] text-slate-400">Rating</span>
+                    <span class="text-[11px] text-slate-400">Elo Rating</span>
                     <p id="stat-win-loss-ratio" class="text-xl font-bold text-purple-400 font-mono">1200</p>
                 </div>
             </div>
@@ -276,7 +278,7 @@
                 <div class="glass-panel p-5 rounded-xl space-y-4 md:col-span-2">
                     <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
                         <span class="font-semibold text-sm text-slate-100">Create Revision Room</span>
-                        <span class="text-xs text-slate-400">Multiplayer Room</span>
+                        <span class="text-xs text-slate-400">specrush Cloud</span>
                     </div>
 
                     <div class="space-y-3.5">
@@ -406,7 +408,7 @@
             <!-- Active Public Lobbies Feed -->
             <div class="glass-panel p-5 rounded-xl space-y-3">
                 <div class="flex items-center justify-between">
-                    <span class="font-semibold text-xs text-slate-200 uppercase tracking-wider">Active Rooms</span>
+                    <span class="font-semibold text-xs text-slate-200 uppercase tracking-wider">Active Rooms (specrush)</span>
                     <span class="text-xs text-slate-400" id="rooms-count-label">0 rooms available</span>
                 </div>
                 <div id="rooms-list-container" class="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -514,7 +516,7 @@
                 <!-- Option Type B: Short Answer Input -->
                 <div id="game-short-answer-container" class="hidden space-y-2 pt-1">
                     <div class="flex items-center space-x-2">
-                        <input type="text" id="short-answer-input" placeholder="Type answer (e.g. 5, -2/3, 4pi)..." class="flex-grow px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <input type="text" id="short-answer-input" placeholder="Type exact answer (e.g. 5, -2/3, 4pi)..." class="flex-grow px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
                         <button id="btn-submit-short-ans" class="px-5 py-2.5 rounded-xl font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition text-xs">
                             Submit
                         </button>
@@ -589,29 +591,44 @@
         </section>
 
         <!-- ========================================================================= -->
-        <!-- SCREEN 6: RESULTS SUMMARY -->
+        <!-- SCREEN 6: RESULTS SUMMARY & ELO BREAKDOWN -->
         <!-- ========================================================================= -->
-        <section id="screen-results" class="w-full max-w-sm glass-panel p-6 rounded-2xl shadow-xl text-center space-y-5 hidden transition-all duration-300">
+        <section id="screen-results" class="w-full max-w-md glass-panel p-6 rounded-2xl shadow-xl text-center space-y-5 hidden transition-all duration-300">
             <div class="space-y-1">
                 <div id="results-winner-emoji" class="text-4xl">🏆</div>
                 <h2 id="results-headline" class="text-2xl font-bold text-white">Match Complete</h2>
                 <p id="results-subtext" class="text-xs text-slate-400">Results Summary</p>
             </div>
 
-            <!-- Elo Adjustment Card -->
-            <div class="glass-card p-3.5 rounded-xl space-y-1">
-                <span class="text-[11px] text-slate-400 uppercase tracking-wider">Rating Adjustment</span>
-                <div class="flex items-center justify-center space-x-2">
-                    <span id="results-old-elo" class="font-mono text-slate-400 text-sm">1200</span>
-                    <span class="text-slate-500">&rarr;</span>
-                    <span id="results-new-elo" class="font-mono text-indigo-400 font-bold text-lg">1232</span>
-                    <span id="results-elo-delta" class="px-1.5 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-300">+32</span>
+            <!-- Mathematical Elo Adjustment Card -->
+            <div class="glass-card p-4 rounded-xl space-y-2 border border-slate-800 text-left">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Elo Rating Calculation</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono" id="results-elo-formula-label">FIDE Pairwise</span>
+                </div>
+                <div class="flex items-center justify-between pt-1">
+                    <div class="space-y-0.5">
+                        <span class="text-[11px] text-slate-400">Rating</span>
+                        <div class="flex items-center space-x-2">
+                            <span id="results-old-elo" class="font-mono text-slate-400 text-sm">1200</span>
+                            <span class="text-slate-500">&rarr;</span>
+                            <span id="results-new-elo" class="font-mono text-indigo-400 font-bold text-xl">1232</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[11px] text-slate-400">Rating Change</span>
+                        <div id="results-elo-delta" class="px-2 py-1 rounded text-xs font-bold bg-emerald-500/10 text-emerald-300 text-center mt-0.5">+32</div>
+                    </div>
+                </div>
+                <div class="border-t border-slate-800/80 pt-2 flex items-center justify-between text-[11px] text-slate-400" id="results-elo-expected-row">
+                    <span>Expected Score: <strong id="results-elo-expected" class="text-slate-300 font-mono">50%</strong></span>
+                    <span>Actual Score: <strong id="results-elo-actual" class="text-slate-300 font-mono">100%</strong></span>
                 </div>
             </div>
 
             <!-- Final Standings -->
             <div class="space-y-1.5 text-left">
-                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Standings</span>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Final Standings</span>
                 <div id="results-standings-list" class="space-y-1"></div>
             </div>
 
@@ -627,13 +644,39 @@
 
     </main>
 
+    <!-- ========================================================================= -->
+    <!-- MODAL: GOOGLE FIRST-TIME USERNAME SETUP -->
+    <!-- ========================================================================= -->
+    <div id="modal-username-setup" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-panel max-w-sm w-full p-6 rounded-2xl border border-indigo-500/30 shadow-2xl space-y-5 text-center">
+            <div class="w-12 h-12 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-2xl mx-auto">
+                ✨
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-lg font-bold text-white">Choose Your Username</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Set a display name for the match scoreboard and multiplayer lobbies.
+                </p>
+            </div>
+
+            <form id="form-setup-username" class="space-y-4" onsubmit="return false;">
+                <div>
+                    <input type="text" id="input-setup-username" maxlength="16" placeholder="e.g. Euler_ATAR" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-medium text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500" required autofocus>
+                </div>
+                <button type="submit" id="btn-confirm-username" class="w-full py-2.5 rounded-xl font-medium bg-indigo-600 hover:bg-indigo-500 text-white text-xs transition shadow-md">
+                    Save Username & Continue
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- Footer with Version & Deployment Counter -->
     <footer class="w-full border-t border-slate-900 bg-slate-950/80 backdrop-blur text-center py-4 text-xs text-slate-500 z-10 space-y-1">
         <p>WACE Mathematics Methods & Specialist Revision Platform</p>
         <div class="flex items-center justify-center space-x-2 text-[11px] font-mono text-slate-400">
             <span class="px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800" id="app-version-badge">v2.5.2</span>
             <span class="text-slate-600">&bull;</span>
-            <span id="app-build-date">Build 2026.09.05-0046</span>
+            <span id="app-build-date">Build 2026.09.05-0101</span>
         </div>
     </footer>
 
