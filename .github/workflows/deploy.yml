@@ -5,6 +5,14 @@ on:
     branches:
       - master
   pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: write
+  statuses: write
 
 jobs:
   deploy:
@@ -17,7 +25,7 @@ jobs:
         uses: nwtgck/actions-netlify@v3.0
         with:
           publish-dir: '.'
-          production-deploy: ${{ github.ref == 'refs/heads/mater' }}
+          production-deploy: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           enable-pull-request-comment: true
           enable-commit-comment: true
