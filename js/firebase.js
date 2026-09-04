@@ -33,16 +33,16 @@ export let isFirebaseAvailable = false;
 export function initFirebase() {
     try {
         app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
+        db = getFirestore(app, 'specrush');
         auth = getAuth(app);
         googleProvider = new GoogleAuthProvider();
         isFirebaseAvailable = true;
-        console.log("Connected to specrush Firebase cloud database.");
+        console.log("Connected to specrush named Firestore database (specrush).");
         return true;
     } catch (e) {
         if (e.code === 'app/duplicate-app' || (e.message && e.message.includes('already exists'))) {
             try {
-                db = getFirestore();
+                db = getFirestore(app || undefined, 'specrush');
                 auth = getAuth();
                 googleProvider = new GoogleAuthProvider();
                 isFirebaseAvailable = true;
