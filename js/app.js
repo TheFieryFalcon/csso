@@ -4,7 +4,7 @@
 import { 
     loadSavedProfile, saveLocalProfile, clearLocalProfile, getInitialStats,
     isFirebaseAvailable, auth, db,
-    authSignInAnonymous, authSignInEmail, authSignInGoogle, authSignOut,
+    setupAuthObserver, authSignInAnonymous, authSignInEmail, authSignInGoogle, authSignOut,
     syncUserProfileWithFirestore, syncQuestionsToFirestore,
     saveRoomToDB, getRoomFromDB, getPublicRoomsFromDB, updateRoomInDB, subscribeToRoom,
     resolveProofQueryInRoom, doc, setDoc, getDoc, updateDoc, serverTimestamp
@@ -49,6 +49,38 @@ document.addEventListener('DOMContentLoaded', () => {
     setupLobbyControls();
     setupAuthHandlers();
 
+    // Setup Firebase Auth observer to automatically synchronize auth sessions
+    setupAuthObserver(async (firebaseUser) => {
+        if (firebaseUser) {
+            state.currentUser = {
+                uid: firebaseUser.uid,
+                displayName: firebaseUser.displayName || state.userProfile.displayName || `Mathlete_${firebaseUser.uid.slice(-4).toUpperCase()}`
+            };
+            state.userProfile.uid = firebaseUser.uid;
+            state.userProfile.displayName = state.currentUser.displayName;
+            
+            // Sync with Firestore profile
+            if (db) {
+                try {
+                    await syncUserProfileWithFirestore(firebaseUser, state.currentUser.displayName);
+                    const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        state.userProfile.elo = data.elo || state.userProfile.elo || 1200;
+                        state.userProfile.avatar = data.avatar || state.userProfile.avatar || '🧮';
+                        state.userProfile.stats = data.stats || state.userProfile.stats || getInitialStats();
+                    }
+                } catch (e) {
+                    console.warn("Auth observer Firestore sync note:", e);
+                }
+            }
+
+            saveLocalProfile(state.userProfile);
+            updateNavbarProfileBadge(state.userProfile);
+            updateCloudStatusBadge();
+        }
+    });
+
     if (savedProfile && state.currentUser && state.currentUser.uid) {
         updateNavbarProfileBadge(state.userProfile);
         updateCloudStatusBadge();
@@ -65,10 +97,10 @@ function updateCloudStatusBadge() {
     if (!badge || !label) return;
 
     if (isFirebaseAvailable) {
-        badge.className = "inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+        badge.className = "inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
         label.innerText = "specrush Cloud";
     } else {
-        badge.className = "inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20";
+        badge.className = "inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20";
         label.innerText = "Offline Mode";
     }
 }
@@ -114,7 +146,7 @@ function setupAuthHandlers() {
                 displayName: `Mathlete_${user.uid.slice(-4).toUpperCase()}`,
                 email: null
             });
-            showToast("✅ Connected anonymously to specrush!");
+            showToast("Connected to specrush.");
         } catch (err) {
             console.error("Anonymous auth error:", err);
             showToast("Auth note: " + (err.message || "Failed to authenticate"), true);
@@ -131,7 +163,7 @@ function setupAuthHandlers() {
                 displayName: user.displayName || 'Google Mathlete',
                 email: user.email
             });
-            showToast(`Welcome, ${user.displayName || 'Mathlete'}!`);
+            showToast(`Welcome, ${user.displayName || 'Mathlete'}`);
         } catch (err) {
             console.error("Google Auth error:", err);
             if (err.code === 'auth/unauthorized-domain') {
@@ -159,7 +191,7 @@ function setupAuthHandlers() {
                 displayName: email.split('@')[0],
                 email: email
             });
-            showToast(isEmailRegisterMode ? "Account created successfully!" : "Signed in successfully!");
+            showToast(isEmailRegisterMode ? "Account created." : "Signed in.");
         } catch (err) {
             console.error("Email auth error:", err);
             showToast("Email Auth: " + (err.message || "Authentication failed"), true);
@@ -188,9 +220,9 @@ async function completeAuthentication(userObj) {
     state.userProfile = {
         uid: userObj.uid,
         displayName: userObj.displayName,
-        avatar: '🧮',
-        elo: 1200,
-        stats: getInitialStats()
+        avatar: state.userProfile.avatar || '🧮',
+        elo: state.userProfile.elo || 1200,
+        stats: state.userProfile.stats || getInitialStats()
     };
 
     // Sync and load statistics from Firestore
@@ -270,9 +302,9 @@ document.getElementById('btn-save-gemini-key')?.addEventListener('click', () => 
     const key = document.getElementById('input-gemini-key')?.value.trim();
     setGeminiApiKey(key);
     if (key) {
-        showToast("✅ Gemini AI Proof Grader Activated (Flash + Flash-Lite Fallback)!");
+        showToast("Gemini key saved.");
     } else {
-        showToast("Gemini API Key removed.");
+        showToast("Gemini key removed.");
     }
 });
 
@@ -285,7 +317,7 @@ function setupAvatarPicker() {
     avatarGrid.innerHTML = '';
     AVAILABLE_AVATARS.forEach(emoji => {
         const btn = document.createElement('button');
-        btn.className = "w-10 h-10 rounded-xl glass-button text-xl flex items-center justify-center hover:scale-110 transition";
+        btn.className = "w-9 h-9 rounded-lg glass-button text-lg flex items-center justify-center hover:scale-105 transition";
         btn.innerText = emoji;
         btn.onclick = async () => {
             state.userProfile.avatar = emoji;
@@ -294,7 +326,7 @@ function setupAvatarPicker() {
             if (avatarDisplay) avatarDisplay.innerText = emoji;
             updateNavbarProfileBadge(state.userProfile);
             document.getElementById('avatar-picker-container')?.classList.add('hidden');
-            showToast(`Avatar updated to ${emoji}`);
+            showToast(`Avatar set to ${emoji}`);
             
             if (db && state.currentUser?.uid) {
                 try {
@@ -331,9 +363,9 @@ function setupLobbyControls() {
     document.querySelectorAll('.target-score-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.target-score-btn').forEach(b => {
-                b.className = "target-score-btn px-4 py-2 rounded-xl text-xs font-bold glass-button text-slate-300";
+                b.className = "target-score-btn px-3.5 py-1.5 rounded-lg text-xs font-medium glass-button text-slate-300";
             });
-            btn.className = "target-score-btn px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white";
+            btn.className = "target-score-btn px-3.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white";
             selectedTargetScore = parseInt(btn.dataset.score, 10);
         });
     });
@@ -347,26 +379,35 @@ function setupLobbyControls() {
     // Create Room
     document.getElementById('btn-create-room')?.addEventListener('click', async () => {
         if (!state.currentUser || !state.currentUser.uid) {
-            showToast("Please sign in to create a room.", true);
-            showScreen('login');
-            return;
+            try {
+                const user = await authSignInAnonymous();
+                await completeAuthentication({
+                    uid: user.uid,
+                    displayName: `Mathlete_${user.uid.slice(-4).toUpperCase()}`,
+                    email: null
+                });
+            } catch (e) {
+                showToast("Please sign in to create a room.", true);
+                showScreen('login');
+                return;
+            }
         }
 
         const checkedTopics = Array.from(document.querySelectorAll('.topic-cb:checked')).map(cb => cb.value);
         if (checkedTopics.length === 0) {
-            showToast("Please select at least one topic for your lobby!", true);
+            showToast("Please select at least one curriculum topic.", true);
             return;
         }
 
         const formats = getSelectedFormats();
         if (!formats.mcq && !formats.short_answer && !formats.multi_step && !formats.proofs) {
-            showToast("Please select at least one question format type!", true);
+            showToast("Please select at least one question format.", true);
             return;
         }
 
         const apiKey = getGeminiApiKey();
         if (formats.proofs && !apiKey) {
-            showToast("⚠️ Gemini API Key required to host Rigorous Proofs! Set key in Profile or uncheck 'Rigorous Long Proofs' to host without key.", true);
+            showToast("Gemini API Key required to host Written Proofs. Set key in Profile or uncheck 'Written Proofs'.", true);
             return;
         }
 
@@ -382,9 +423,9 @@ function setupLobbyControls() {
             },
             players: {
                 [state.currentUser.uid]: {
-                    displayName: state.userProfile.displayName,
-                    avatar: state.userProfile.avatar,
-                    elo: state.userProfile.elo,
+                    displayName: state.userProfile.displayName || 'Host',
+                    avatar: state.userProfile.avatar || '🧮',
+                    elo: state.userProfile.elo || 1200,
                     score: 0,
                     isHost: true
                 }
@@ -395,6 +436,7 @@ function setupLobbyControls() {
         };
 
         try {
+            showToast("Creating room on specrush...");
             await saveRoomToDB(roomId, initialRoom);
             enterRoom(roomId);
         } catch (e) {
@@ -405,24 +447,21 @@ function setupLobbyControls() {
 
     // Join by PIN
     document.getElementById('btn-join-room-code')?.addEventListener('click', async () => {
-        const code = document.getElementById('input-room-code')?.value.trim().toUpperCase();
+        const code = document.getElementById('input-room-code')?.value.trim();
         if (!code || code.length !== 6) {
-            showToast("Enter a valid 6-digit room PIN", true);
+            showToast("Enter a valid 6-digit room PIN.", true);
             return;
         }
-        try {
-            const room = await getRoomFromDB(code);
-            if (!room) {
-                showToast("Room not found on Firebase!", true);
-                return;
+        await joinRoom(code);
+    });
+
+    // Enter key support for PIN input
+    document.getElementById('input-room-code')?.addEventListener('keypress', async (e) => {
+        if (e.key === 'Enter') {
+            const code = document.getElementById('input-room-code')?.value.trim();
+            if (code && code.length === 6) {
+                await joinRoom(code);
             }
-            if (room.status !== 'waiting') {
-                showToast("This match is already in progress.", true);
-                return;
-            }
-            await joinRoom(code);
-        } catch (e) {
-            showToast("Join error: " + e.message, true);
         }
     });
 
@@ -433,7 +472,7 @@ function setupLobbyControls() {
         const formats = getSelectedFormats();
 
         if (!formats.mcq && !formats.short_answer && !formats.multi_step && !formats.proofs) {
-            showToast("Please select at least one question format!", true);
+            showToast("Please select at least one problem format.", true);
             return;
         }
 
@@ -446,10 +485,10 @@ function setupLobbyControls() {
             progressContainer.innerHTML = `
                 <div class="space-y-1">
                     <div class="flex justify-between text-xs">
-                        <span class="font-bold text-slate-200">${state.userProfile.avatar} ${state.userProfile.displayName} (Solo)</span>
-                        <span class="font-mono text-indigo-400 font-bold" id="solo-live-score">0 / ${selectedTargetScore}</span>
+                        <span class="font-medium text-slate-200">${state.userProfile.avatar} ${state.userProfile.displayName} (Solo)</span>
+                        <span class="font-mono text-indigo-400 font-medium" id="solo-live-score">0 / ${selectedTargetScore}</span>
                     </div>
-                    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                         <div id="solo-live-bar" class="h-full bg-indigo-500 transition-all duration-300" style="width: 0%;"></div>
                     </div>
                 </div>
@@ -492,16 +531,16 @@ function setupLobbyControls() {
     document.getElementById('btn-leave-room-top')?.addEventListener('click', exitCurrentRoom);
     document.getElementById('btn-game-leave')?.addEventListener('click', exitCurrentRoom);
 
-    // Cloud Sync Button in Header (with setDoc properly bound)
+    // Cloud Sync Button in Header
     document.getElementById('nav-btn-sync-cloud')?.addEventListener('click', async () => {
         if (!db) {
-            showToast("Firestore database is unavailable.", true);
+            showToast("Firestore is unavailable.", true);
             return;
         }
         try {
-            showToast("Syncing questions & profile to Firestore (specrush)...");
+            showToast("Syncing question bank to Firestore...");
             await syncQuestionsToFirestore(questionDB.staticQuestions, state.userProfile);
-            showToast("✅ Cloud sync completed successfully!");
+            showToast("Cloud sync complete.");
         } catch(e) {
             console.error("Cloud sync error:", e);
             showToast("Sync error: " + (e.message || "Failed to sync"), true);
@@ -510,21 +549,60 @@ function setupLobbyControls() {
 }
 
 // ---------------------------------------------------------
-// ROOM LIFECYCLE & HOST-DELEGATED QUERY PROCESSING
+// ROOM LIFECYCLE & MULTIPLAYER MATCHMAKING
 // ---------------------------------------------------------
 async function joinRoom(roomId) {
-    state.currentRoomId = roomId;
-    updateRoomNavLeaveButton();
-    await updateRoomInDB(roomId, {
-        [`players.${state.currentUser.uid}`]: {
-            displayName: state.userProfile.displayName,
-            avatar: state.userProfile.avatar,
-            elo: state.userProfile.elo,
-            score: 0,
-            isHost: false
+    if (!roomId) return;
+    const cleanRoomId = roomId.trim();
+
+    // Ensure authenticated context before joining
+    if (!state.currentUser || !state.currentUser.uid) {
+        try {
+            showToast("Authenticating session...");
+            const user = await authSignInAnonymous();
+            await completeAuthentication({
+                uid: user.uid,
+                displayName: `Mathlete_${user.uid.slice(-4).toUpperCase()}`,
+                email: null
+            });
+        } catch (err) {
+            showToast("Please sign in before joining a room.", true);
+            showScreen('login');
+            return;
         }
-    });
-    enterRoom(roomId);
+    }
+
+    try {
+        showToast(`Joining room #${cleanRoomId}...`);
+        const room = await getRoomFromDB(cleanRoomId);
+        if (!room) {
+            showToast(`Room #${cleanRoomId} not found on specrush. Check PIN and try again.`, true);
+            return;
+        }
+        if (room.status !== 'waiting') {
+            showToast("This match is already in progress.", true);
+            return;
+        }
+
+        state.currentRoomId = cleanRoomId;
+        updateRoomNavLeaveButton();
+
+        // Update player entry in room
+        await updateRoomInDB(cleanRoomId, {
+            [`players.${state.currentUser.uid}`]: {
+                displayName: state.userProfile.displayName || 'Player',
+                avatar: state.userProfile.avatar || '🧮',
+                elo: state.userProfile.elo || 1200,
+                score: 0,
+                isHost: false
+            }
+        });
+
+        enterRoom(cleanRoomId);
+    } catch (e) {
+        console.error("Join room error:", e);
+        showToast("Failed to join room: " + e.message, true);
+    }
 }
 
 function enterRoom(roomId) {
@@ -538,6 +616,8 @@ function enterRoom(roomId) {
     state.roomUnsubscribe = subscribeToRoom(roomId, (data) => {
         state.roomData = data;
         handleRoomUpdate(data);
+    }, (err) => {
+        console.warn("Room listener note:", err);
     });
 
     const waitingTitle = document.getElementById('waiting-room-title');
@@ -602,23 +682,23 @@ async function handleRoomUpdate(data) {
     if (playerCount) playerCount.innerText = players.length;
 
     const targetScore = document.getElementById('waiting-target-score');
-    if (targetScore) targetScore.innerText = `${data.settings?.targetScore || 10} Pts`;
+    if (targetScore) targetScore.innerText = `${data.settings?.targetScore || 10} Problems`;
 
     const playerListEl = document.getElementById('waiting-players-list');
     if (playerListEl) {
         playerListEl.innerHTML = '';
         players.forEach(p => {
             const item = document.createElement('div');
-            item.className = "flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800";
+            item.className = "flex items-center justify-between p-2.5 rounded-lg bg-slate-900/80 border border-slate-800";
             item.innerHTML = `
-                <div class="flex items-center space-x-3">
-                    <span class="text-xl">${p.avatar || '🧮'}</span>
+                <div class="flex items-center space-x-2.5">
+                    <span class="text-lg">${p.avatar || '🧮'}</span>
                     <div>
-                        <span class="text-xs font-bold text-white">${p.displayName}</span>
-                        ${p.isHost ? '<span class="ml-2 text-[10px] font-bold text-amber-400 uppercase bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">Host</span>' : ''}
+                        <span class="text-xs font-medium text-white">${p.displayName}</span>
+                        ${p.isHost ? '<span class="ml-1.5 text-[10px] font-medium text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">Host</span>' : ''}
                     </div>
                 </div>
-                <span class="font-mono text-xs text-indigo-400 font-bold">${p.elo || 1200} ELO</span>
+                <span class="font-mono text-xs text-indigo-400 font-medium">${p.elo || 1200}</span>
             `;
             playerListEl.appendChild(item);
         });
@@ -646,14 +726,14 @@ async function handleRoomUpdate(data) {
                 const isMe = p.displayName === state.userProfile.displayName;
 
                 const bar = document.createElement('div');
-                bar.className = "space-y-1";
+                bar.className = "space-y-0.5";
                 bar.innerHTML = `
-                    <div class="flex justify-between text-xs font-semibold">
-                        <span class="${isMe ? 'text-indigo-400 font-bold' : 'text-slate-300'}">${p.avatar || '🧮'} ${p.displayName} ${isMe ? '(You)' : ''}</span>
+                    <div class="flex justify-between text-[11px]">
+                        <span class="${isMe ? 'text-indigo-400 font-semibold' : 'text-slate-300'}">${p.avatar || '🧮'} ${p.displayName} ${isMe ? '(You)' : ''}</span>
                         <span class="font-mono ${isMe ? 'text-indigo-400' : 'text-slate-400'}">${p.score || 0} / ${data.settings?.targetScore || 10}</span>
                     </div>
-                    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r ${isMe ? 'from-indigo-500 to-purple-500' : 'from-slate-600 to-slate-500'} transition-all duration-300" style="width: ${pct}%;"></div>
+                    <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-indigo-500 transition-all duration-300" style="width: ${pct}%;"></div>
                     </div>
                 `;
                 container.appendChild(bar);
@@ -688,32 +768,36 @@ async function loadPublicRooms() {
     const countLabel = document.getElementById('rooms-count-label');
     if (!container || !countLabel) return;
 
-    const roomList = await getPublicRoomsFromDB();
-    countLabel.innerText = `${roomList.length} room${roomList.length === 1 ? '' : 's'} available`;
-    container.innerHTML = '';
+    try {
+        const roomList = await getPublicRoomsFromDB();
+        countLabel.innerText = `${roomList.length} room${roomList.length === 1 ? '' : 's'} available`;
+        container.innerHTML = '';
 
-    if (roomList.length === 0) {
-        container.innerHTML = `<div class="p-6 text-center text-xs text-slate-500 italic">No public matches active on specrush. Create one to get started!</div>`;
-        return;
-    }
+        if (roomList.length === 0) {
+            container.innerHTML = `<div class="p-4 text-center text-xs text-slate-500 italic">No public matches active. Create one to get started.</div>`;
+            return;
+        }
 
-    roomList.forEach(room => {
-        const playerCount = Object.keys(room.players || {}).filter(k => room.players[k]).length;
-        const card = document.createElement('div');
-        card.className = "glass-card p-3.5 rounded-xl border border-slate-800 hover:border-indigo-500/50 flex items-center justify-between transition cursor-pointer";
-        card.innerHTML = `
-            <div class="space-y-0.5">
-                <div class="flex items-center space-x-2">
-                    <span class="font-mono font-bold text-white text-xs">PIN: ${room.id}</span>
-                    <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-bold">First to ${room.settings?.targetScore || 10}</span>
+        roomList.forEach(room => {
+            const playerCount = Object.keys(room.players || {}).filter(k => room.players[k]).length;
+            const card = document.createElement('div');
+            card.className = "glass-card p-3 rounded-lg border border-slate-800 hover:border-indigo-500/40 flex items-center justify-between transition cursor-pointer";
+            card.innerHTML = `
+                <div class="space-y-0.5">
+                    <div class="flex items-center space-x-2">
+                        <span class="font-mono font-semibold text-white text-xs">PIN: ${room.id}</span>
+                        <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">First to ${room.settings?.targetScore || 10}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Topics: ${(room.settings?.topics || []).slice(0, 3).join(', ')}...</p>
                 </div>
-                <p class="text-[11px] text-slate-400">Topics: ${(room.settings?.topics || []).slice(0, 3).join(', ')}...</p>
-            </div>
-            <button class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition">
-                Join (${playerCount})
-            </button>
-        `;
-        card.onclick = () => joinRoom(room.id);
-        container.appendChild(card);
-    });
+                <button class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition">
+                    Join (${playerCount})
+                </button>
+            `;
+            card.onclick = () => joinRoom(room.id);
+            container.appendChild(card);
+        });
+    } catch (e) {
+        console.warn("loadPublicRooms note:", e);
+    }
 }

@@ -1,7 +1,4 @@
-// ---------------------------------------------------------
-// WACE MATHEMATICS SPECIALIST QUESTION GENERATORS
-// ---------------------------------------------------------
-import { SvgBuilder } from '../svg-builder.js';
+import { SvgBuilder, GeoMath, buildDynamicCircleDiagram, buildDynamicVectorDiagram } from '../svg-builder.js';
 
 export const specialistGenerators = {
     genSpecMultiStepVectors() {
@@ -89,106 +86,113 @@ export const specialistGenerators = {
             },
 
     genSpecGeomCenterCircumference() {
-                const inscribed = Math.floor(Math.random() * 30) + 25;
-                const central = inscribed * 2;
-                const pA = SvgBuilder.polarToCartesian(100, 210);
-                const pB = SvgBuilder.polarToCartesian(100, 330);
-                const pP = SvgBuilder.polarToCartesian(100, 80);
-                const pO = { x: 0, y: 0 };
-                const visual = SvgBuilder.circleTemplate(`
-                    ${SvgBuilder.line(pA, pO, '#6366f1')}
-                    ${SvgBuilder.line(pB, pO, '#6366f1')}
-                    ${SvgBuilder.line(pA, pP, '#94a3b8')}
-                    ${SvgBuilder.line(pB, pP, '#94a3b8')}
-                    ${SvgBuilder.dot(pO, 'O', {x: 0, y: 15})}
-                    ${SvgBuilder.dot(pA, 'A', {x: -15, y: 10})}
-                    ${SvgBuilder.dot(pB, 'B', {x: 15, y: 10})}
-                    ${SvgBuilder.dot(pP, 'P', {x: 0, y: -15})}
-                    ${SvgBuilder.text(pP.x, pP.y + 30, `${inscribed}°`, '#818cf8')}
-                    ${SvgBuilder.text(0, -20, 'θ', '#c084fc')}
-                `);
-                return {
-                    topic: 'Geometry',
-                    text: `In the circle with centre $O$, $\\angle APB = ${inscribed}^\\circ$. Find the angle subtended at the centre, $\\theta = \\angle AOB$.`,
-                    visual: visual,
-                    options: [`$${central}^\\circ$`, `$${inscribed}^\\circ$`, `$${180 - inscribed}^\\circ$`, `$${central / 2}^\\circ$`],
-                    ansIndex: 0
-                };
-            },
+        const inscribed = Math.floor(Math.random() * 30) + 25;
+        const central = inscribed * 2;
+        const visual = buildDynamicCircleDiagram({
+            points: [
+                { id: 'A', angle: 210, label: 'A' },
+                { id: 'B', angle: 330, label: 'B' },
+                { id: 'P', angle: 80, label: 'P' }
+            ],
+            chords: [
+                ['A', 'O', '#6366f1', 2],
+                ['B', 'O', '#6366f1', 2],
+                ['A', 'P', '#94a3b8', 1.5],
+                ['B', 'P', '#94a3b8', 1.5]
+            ],
+            angles: [
+                { vertex: 'P', p1: 'A', p2: 'B', label: `${inscribed}°`, radius: 22, color: '#818cf8' },
+                { vertex: 'O', p1: 'A', p2: 'B', label: 'θ', radius: 18, color: '#c084fc' }
+            ],
+            showCenter: true,
+            centerLabel: 'O'
+        });
+        return {
+            topic: 'Geometry',
+            text: `In the circle with centre $O$, $\\angle APB = ${inscribed}^\\circ$. Find the angle subtended at the centre, $\\theta = \\angle AOB$.`,
+            visual: visual,
+            options: [`$${central}^\\circ$`, `$${inscribed}^\\circ$`, `$${180 - inscribed}^\\circ$`, `$${central / 2}^\\circ$`],
+            ansIndex: 0
+        };
+    },
 
     genSpecGeomCyclicQuad() {
-                const angleA = Math.floor(Math.random() * 35) + 65;
-                const angleC = 180 - angleA;
-                const pA = SvgBuilder.polarToCartesian(100, 135);
-                const pB = SvgBuilder.polarToCartesian(100, 45);
-                const pC = SvgBuilder.polarToCartesian(100, 315);
-                const pD = SvgBuilder.polarToCartesian(100, 225);
-                const visual = SvgBuilder.circleTemplate(`
-                    ${SvgBuilder.path([pA, pB, pC, pD], true, '#818cf8')}
-                    ${SvgBuilder.dot(pA, 'A', {x: -12, y: -12})}
-                    ${SvgBuilder.dot(pB, 'B', {x: 12, y: -12})}
-                    ${SvgBuilder.dot(pC, 'C', {x: 12, y: 15})}
-                    ${SvgBuilder.dot(pD, 'D', {x: -12, y: 15})}
-                    ${SvgBuilder.text(pA.x + 20, pA.y + 20, `${angleA}°`, '#f8fafc')}
-                    ${SvgBuilder.text(pC.x - 20, pC.y - 20, 'x', '#c084fc')}
-                `);
-                return {
-                    topic: 'Geometry',
-                    text: `Given the cyclic quadrilateral $ABCD$ inscribed in the circle, find $x = \\angle BCD$.`,
-                    visual: visual,
-                    options: [`$${angleC}^\\circ$`, `$${angleA}^\\circ$`, `$${90 + angleA}^\\circ$`, `$${360 - angleA}^\\circ$`],
-                    ansIndex: 0
-                };
-            },
+        const angleA = Math.floor(Math.random() * 35) + 65;
+        const angleC = 180 - angleA;
+        const visual = buildDynamicCircleDiagram({
+            points: [
+                { id: 'A', angle: 135, label: 'A' },
+                { id: 'B', angle: 45, label: 'B' },
+                { id: 'C', angle: 315, label: 'C' },
+                { id: 'D', angle: 225, label: 'D' }
+            ],
+            polygons: [{ points: ['A', 'B', 'C', 'D'], fill: 'rgba(99,102,241,0.08)', stroke: '#818cf8' }],
+            angles: [
+                { vertex: 'A', p1: 'D', p2: 'B', label: `${angleA}°`, radius: 18, color: '#f8fafc' },
+                { vertex: 'C', p1: 'B', p2: 'D', label: 'x', radius: 18, color: '#c084fc' }
+            ],
+            showCenter: false
+        });
+        return {
+            topic: 'Geometry',
+            text: `Given the cyclic quadrilateral $ABCD$ inscribed in the circle, find $x = \\angle BCD$.`,
+            visual: visual,
+            options: [`$${angleC}^\\circ$`, `$${angleA}^\\circ$`, `$${90 + angleA}^\\circ$`, `$${360 - angleA}^\\circ$`],
+            ansIndex: 0
+        };
+    },
 
     genSpecGeomSemicircle() {
-                const angleB = Math.floor(Math.random() * 30) + 25;
-                const angleA = 90 - angleB;
-                const pA = SvgBuilder.polarToCartesian(100, 180);
-                const pB = SvgBuilder.polarToCartesian(100, 0);
-                const pC = SvgBuilder.polarToCartesian(100, 60);
-                const visual = SvgBuilder.circleTemplate(`
-                    ${SvgBuilder.line(pA, pB, '#6366f1')}
-                    ${SvgBuilder.line(pA, pC, '#94a3b8')}
-                    ${SvgBuilder.line(pB, pC, '#94a3b8')}
-                    ${SvgBuilder.dot({x:0, y:0}, 'O', {x:0, y:15})}
-                    ${SvgBuilder.dot(pA, 'A', {x: -15, y: 0})}
-                    ${SvgBuilder.dot(pB, 'B', {x: 15, y: 0})}
-                    ${SvgBuilder.dot(pC, 'C', {x: 10, y: -15})}
-                    ${SvgBuilder.text(pB.x - 30, pB.y - 10, `${angleB}°`, '#f8fafc')}
-                    ${SvgBuilder.text(pA.x + 30, pA.y - 10, 'θ', '#c084fc')}
-                `);
-                return {
-                    topic: 'Geometry',
-                    text: `Diameter $AB$ passes through the centre $O$. If $\\angle CBA = ${angleB}^\\circ$, find $\\theta = \\angle CAB$.`,
-                    visual: visual,
-                    options: [`$${angleA}^\\circ$`, `$${angleB}^\\circ$`, `$${180 - angleB}^\\circ$`, `$90^\\circ$`],
-                    ansIndex: 0
-                };
-            },
+        const angleB = Math.floor(Math.random() * 30) + 25;
+        const angleA = 90 - angleB;
+        const visual = buildDynamicCircleDiagram({
+            points: [
+                { id: 'A', angle: 180, label: 'A' },
+                { id: 'B', angle: 0, label: 'B' },
+                { id: 'C', angle: 60, label: 'C' }
+            ],
+            polygons: [{ points: ['A', 'B', 'C'], fill: 'rgba(99,102,241,0.06)', stroke: '#818cf8' }],
+            chords: [['A', 'B', '#6366f1', 2]],
+            angles: [
+                { vertex: 'B', p1: 'C', p2: 'A', label: `${angleB}°`, radius: 22, color: '#f8fafc' },
+                { vertex: 'A', p1: 'B', p2: 'C', label: 'θ', radius: 22, color: '#c084fc' }
+            ],
+            rightAngles: [{ vertex: 'C', p1: 'A', p2: 'B', size: 10 }],
+            showCenter: true,
+            centerLabel: 'O'
+        });
+        return {
+            topic: 'Geometry',
+            text: `Diameter $AB$ passes through the centre $O$. If $\\angle CBA = ${angleB}^\\circ$, find $\\theta = \\angle CAB$.`,
+            visual: visual,
+            options: [`$${angleA}^\\circ$`, `$${angleB}^\\circ$`, `$${180 - angleB}^\\circ$`, `$90^\\circ$`],
+            ansIndex: 0
+        };
+    },
 
     genSpecGeomAlternateSegment() {
-                const angle = Math.floor(Math.random() * 25) + 40;
-                const pA = SvgBuilder.polarToCartesian(100, 270);
-                const pB = SvgBuilder.polarToCartesian(100, 140);
-                const pC = SvgBuilder.polarToCartesian(100, 40);
-                const visual = SvgBuilder.circleTemplate(`
-                    ${SvgBuilder.line({x: -120, y: pA.y}, {x: 120, y: pA.y}, '#ec4899')}
-                    ${SvgBuilder.path([pA, pB, pC], true, '#818cf8')}
-                    ${SvgBuilder.dot(pA, 'T', {x: 0, y: 15})}
-                    ${SvgBuilder.dot(pB, 'A', {x: -15, y: -10})}
-                    ${SvgBuilder.dot(pC, 'B', {x: 15, y: -10})}
-                    ${SvgBuilder.text(pA.x + 40, pA.y - 10, `${angle}°`, '#cbd5e1')}
-                    ${SvgBuilder.text(pB.x + 20, pB.y + 20, 'θ', '#c084fc')}
-                `);
-                return {
-                    topic: 'Geometry',
-                    text: `A tangent touches the circle at $T$. Using the alternate segment theorem, find $\\theta = \\angle TAB$.`,
-                    visual: visual,
-                    options: [`$${angle}^\\circ$`, `$${180 - angle}^\\circ$`, `$${90 - angle}^\\circ$`, `$${2 * angle}^\\circ$`],
-                    ansIndex: 0
-                };
-            },
+        const angle = Math.floor(Math.random() * 25) + 40;
+        const visual = buildDynamicCircleDiagram({
+            points: [
+                { id: 'T', angle: 270, label: 'T' },
+                { id: 'A', angle: 140, label: 'A' },
+                { id: 'B', angle: 40, label: 'B' }
+            ],
+            tangents: [{ pointId: 'T', length: 110, color: '#fb7185', label: '' }],
+            polygons: [{ points: ['T', 'A', 'B'], fill: 'rgba(99,102,241,0.08)', stroke: '#818cf8' }],
+            angles: [
+                { vertex: 'A', p1: 'T', p2: 'B', label: 'θ', radius: 20, color: '#c084fc' }
+            ],
+            showCenter: false
+        });
+        return {
+            topic: 'Geometry',
+            text: `A tangent touches the circle at $T$. Using the alternate segment theorem, find $\\theta = \\angle TAB$.`,
+            visual: visual,
+            options: [`$${angle}^\\circ$`, `$${180 - angle}^\\circ$`, `$${90 - angle}^\\circ$`, `$${2 * angle}^\\circ$`],
+            ansIndex: 0
+        };
+    },
 
     genSpecCombinatoricsPerm() {
                 return this.formatQuestion('Combinatorics', `Evaluate $^5P_3$.`, `$60$`, [`$20$`, `$120$`, `$10$`]);

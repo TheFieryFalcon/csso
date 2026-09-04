@@ -63,6 +63,14 @@ initFirebase();
 // ---------------------------------------------------------
 
 /**
+ * Setup Auth Observer
+ */
+export function setupAuthObserver(callback) {
+    if (!auth) return () => {};
+    return onAuthStateChanged(auth, callback);
+}
+
+/**
  * 1. Anonymous Authentication
  */
 export async function authSignInAnonymous() {
@@ -195,8 +203,25 @@ export async function syncQuestionsToFirestore(questionsArray, userProfile) {
 }
 
 // ---------------------------------------------------------
-// CLOUD FIRESTORE MULTIPLAYER ROOMS
+// CLOUD FIRESTORE MULTIPLAYER ROOMS (BULLETPROOF WITH MERGE)
 // ---------------------------------------------------------
+export function expandDotNotation(obj) {
+    const result = {};
+    for (const key of Object.keys(obj)) {
+        const val = obj[key];
+        const parts = key.split('.');
+        let curr = result;
+        for (let i = 0; i < parts.length - 1; i++) {
+            if (!curr[parts[i]] || typeof curr[parts[i]] !== 'object') {
+                curr[parts[i]] = {};
+            }
+            curr = curr[parts[i]];
+        }
+        curr[parts[parts.length - 1]] = val;
+    }
+    return result;
+}
+
 export async function saveRoomToDB(roomId, data) {
     if (!db) throw new Error("Firestore database is unavailable.");
     await setDoc(doc(db, 'rooms', roomId), data);
@@ -226,14 +251,20 @@ export async function getPublicRoomsFromDB() {
 
 export async function updateRoomInDB(roomId, patch) {
     if (!db) throw new Error("Firestore database is unavailable.");
-    const firestorePatch = {};
-    Object.keys(patch).forEach(k => {
-        firestorePatch[k] = (patch[k] === null || patch[k] === undefined) ? deleteField() : patch[k];
-    });
-    await updateDoc(doc(db, 'rooms', roomId), firestorePatch);
+    try {
+        const firestorePatch = {};
+        Object.keys(patch).forEach(k => {
+            firestorePatch[k] = (patch[k] === null || patch[k] === undefined) ? deleteField() : patch[k];
+        });
+        await updateDoc(doc(db, 'rooms', roomId), firestorePatch);
+    } catch (e) {
+        // Resilient fallback using setDoc merge
+        const expanded = expandDotNotation(patch);
+        await setDoc(doc(db, 'rooms', roomId), expanded, { merge: true });
+    }
 }
 
-export function subscribeToRoom(roomId, callback) {
+export function subscribeToRoom(roomId, callback, onError) {
     if (!db) throw new Error("Firestore database is unavailable.");
     return onSnapshot(doc(db, 'rooms', roomId), (snap) => {
         if (snap.exists()) {
@@ -241,6 +272,7 @@ export function subscribeToRoom(roomId, callback) {
         }
     }, (err) => {
         console.error("Room subscription error:", err);
+        if (onError) onError(err);
     });
 }
 
