@@ -1,12 +1,11 @@
 // ---------------------------------------------------------
-// FIREBASE CLOUD FIRESTORE & AUTHENTICATION ABSTRACTION
+// FIREBASE REALTIME DATABASE & AUTHENTICATION ABSTRACTION
 // Configured strictly for Firebase Project: specrush
 // ---------------------------------------------------------
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { 
-    getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteField, 
-    query, where, onSnapshot, serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    getDatabase, ref, set, get, update, onValue, off, child, serverTimestamp as rtdbServerTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { 
     getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword,
     signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut 
@@ -18,6 +17,7 @@ export const LOCAL_STORAGE_KEY_PROFILE = 'csso_math_user_profile_v1';
 export const firebaseConfig = {
     apiKey: "AIzaSyBhm7I2wEcJkqEOn_XJi9XmUw-94y0Q8nw",
     authDomain: "specrush.firebaseapp.com",
+    databaseURL: "https://specrush-default-rtdb.firebaseio.com",
     projectId: "specrush",
     storageBucket: "specrush.firebasestorage.app",
     messagingSenderId: "1056581177651",
@@ -33,16 +33,16 @@ export let isFirebaseAvailable = false;
 export function initFirebase() {
     try {
         app = initializeApp(firebaseConfig);
-        db = getFirestore(app, 'specrush');
+        db = getDatabase(app);
         auth = getAuth(app);
         googleProvider = new GoogleAuthProvider();
         isFirebaseAvailable = true;
-        console.log("Connected to specrush named Firestore database (specrush).");
+        console.log("Connected to specrush Realtime Database.");
         return true;
     } catch (e) {
         if (e.code === 'app/duplicate-app' || (e.message && e.message.includes('already exists'))) {
             try {
-                db = getFirestore(app || undefined, 'specrush');
+                db = getDatabase(app || undefined);
                 auth = getAuth();
                 googleProvider = new GoogleAuthProvider();
                 isFirebaseAvailable = true;
@@ -165,12 +165,23 @@ export function clearLocalProfile() {
     localStorage.removeItem(LOCAL_STORAGE_KEY_PROFILE);
 }
 
+export async function getUserProfileFromDB(uid) {
+    if (!db || !uid) return null;
+    try {
+        const snap = await get(ref(db, `users/${uid}`));
+        if (snap.exists()) return snap.val();
+    } catch(e) {
+        console.warn("getUserProfileFromDB warning:", e);
+    }
+    return null;
+}
+
 export async function checkUserHasCustomUsername(uid) {
     if (!db || !uid) return false;
     try {
-        const snap = await getDoc(doc(db, 'users', uid));
+        const snap = await get(ref(db, `users/${uid}`));
         if (snap.exists()) {
-            const data = snap.data();
+            const data = snap.val();
             return Boolean(data.isUsernameSet && data.displayName);
         }
     } catch(e) {
@@ -181,22 +192,21 @@ export async function checkUserHasCustomUsername(uid) {
 
 export async function updateUserUsername(uid, username, avatar = '🧮') {
     if (!db || !uid) return;
-    const userRef = doc(db, 'users', uid);
-    await setDoc(userRef, {
+    await update(ref(db, `users/${uid}`), {
         displayName: username,
         avatar: avatar,
         isUsernameSet: true,
-        updatedAt: serverTimestamp()
-    }, { merge: true });
+        updatedAt: Date.now()
+    });
 }
 
 export async function syncUserProfileWithFirestore(user, customName = null) {
     if (!db || !user) return;
     try {
-        const userRef = doc(db, 'users', user.uid);
-        const snap = await getDoc(userRef);
+        const userRef = ref(db, `users/${user.uid}`);
+        const snap = await get(userRef);
         if (!snap.exists()) {
-            await setDoc(userRef, {
+            await set(userRef, {
                 uid: user.uid,
                 displayName: customName || `Mathlete_${user.uid.slice(-4).toUpperCase()}`,
                 email: user.email || null,
@@ -205,79 +215,75 @@ export async function syncUserProfileWithFirestore(user, customName = null) {
                 stats: getInitialStats(),
                 isAnonymous: user.isAnonymous || false,
                 isUsernameSet: Boolean(customName),
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
+                createdAt: Date.now(),
+                updatedAt: Date.now()
             });
         }
     } catch (e) {
-        console.warn("Firestore user sync warning:", e);
+        console.warn("RTDB user sync warning:", e);
     }
 }
 
 export async function syncQuestionsToFirestore(questionsArray, userProfile) {
-    if (!db) throw new Error("Firestore database is unavailable.");
-    const promises = [];
+    if (!db) throw new Error("Realtime database is unavailable.");
+    const updates = {};
     for (let i = 0; i < questionsArray.length; i++) {
-        promises.push(setDoc(doc(db, 'questions', `static_q_${i}`), {
+        updates[`questions/static_q_${i}`] = {
             ...questionsArray[i],
-            updatedAt: serverTimestamp()
-        }));
+            updatedAt: Date.now()
+        };
     }
     if (userProfile && userProfile.uid) {
-        promises.push(setDoc(doc(db, 'users', userProfile.uid), {
-            displayName: userProfile.displayName,
-            avatar: userProfile.avatar,
-            elo: userProfile.elo,
-            stats: userProfile.stats,
-            updatedAt: serverTimestamp()
-        }, { merge: true }));
+        updates[`users/${userProfile.uid}/displayName`] = userProfile.displayName;
+        updates[`users/${userProfile.uid}/avatar`] = userProfile.avatar;
+        updates[`users/${userProfile.uid}/elo`] = userProfile.elo;
+        updates[`users/${userProfile.uid}/stats`] = userProfile.stats;
+        updates[`users/${userProfile.uid}/updatedAt`] = Date.now();
     }
-    await Promise.all(promises);
+    await update(ref(db), updates);
 }
 
 // ---------------------------------------------------------
-// UNIFIED SPEC-RUSH CLOUD FIRESTORE MULTIPLAYER ROOMS
+// UNIFIED SPEC-RUSH MULTIPLAYER ROOMS VIA REALTIME DATABASE
 // ---------------------------------------------------------
-export function expandDotNotation(obj) {
-    const result = {};
-    for (const key of Object.keys(obj)) {
-        const val = obj[key];
-        const parts = key.split('.');
-        let curr = result;
-        for (let i = 0; i < parts.length - 1; i++) {
-            if (!curr[parts[i]] || typeof curr[parts[i]] !== 'object') {
-                curr[parts[i]] = {};
-            }
-            curr = curr[parts[i]];
-        }
-        curr[parts[parts.length - 1]] = val;
+function formatPatchToRTDB(patch) {
+    const formatted = {};
+    for (const key of Object.keys(patch)) {
+        const slashKey = key.replace(/\./g, '/');
+        formatted[slashKey] = patch[key];
     }
-    return result;
+    return formatted;
 }
 
 export async function saveRoomToDB(roomId, data) {
-    if (!db) throw new Error("Firestore database is unavailable.");
+    if (!db) throw new Error("Realtime database is unavailable.");
     const cleanId = String(roomId).trim();
-    await setDoc(doc(db, 'rooms', cleanId), data);
+    await set(ref(db, `rooms/${cleanId}`), data);
 }
 
 export async function getRoomFromDB(roomId) {
-    if (!db) throw new Error("Firestore database is unavailable.");
+    if (!db) throw new Error("Realtime database is unavailable.");
     const cleanId = String(roomId).trim();
-    const snap = await getDoc(doc(db, 'rooms', cleanId));
-    if (snap.exists()) return snap.data();
+    const snap = await get(ref(db, `rooms/${cleanId}`));
+    if (snap.exists()) return snap.val();
     return null;
 }
 
 export async function getPublicRoomsFromDB() {
     if (!db) return [];
     try {
-        const roomsCol = collection(db, 'rooms');
-        const q = query(roomsCol, where('status', '==', 'waiting'));
-        const snap = await getDocs(q);
-        const rooms = [];
-        snap.forEach(d => rooms.push(d.data()));
-        return rooms;
+        const snap = await get(ref(db, 'rooms'));
+        if (snap.exists()) {
+            const val = snap.val();
+            const rooms = [];
+            for (const key of Object.keys(val || {})) {
+                if (val[key] && val[key].status === 'waiting') {
+                    rooms.push(val[key]);
+                }
+            }
+            return rooms;
+        }
+        return [];
     } catch (e) {
         console.warn("Error querying public rooms from specrush:", e);
         return [];
@@ -285,18 +291,21 @@ export async function getPublicRoomsFromDB() {
 }
 
 export async function updateRoomInDB(roomId, patch) {
-    if (!db) throw new Error("Firestore database is unavailable.");
+    if (!db) throw new Error("Realtime database is unavailable.");
     const cleanId = String(roomId).trim();
-    const expanded = expandDotNotation(patch);
-    await setDoc(doc(db, 'rooms', cleanId), expanded, { merge: true });
+    const formatted = formatPatchToRTDB(patch);
+    await update(ref(db, `rooms/${cleanId}`), formatted);
 }
 
 export function subscribeToRoom(roomId, callback, onError) {
-    if (!db) throw new Error("Firestore database is unavailable.");
+    if (!db) throw new Error("Realtime database is unavailable.");
     const cleanId = String(roomId).trim();
-    return onSnapshot(doc(db, 'rooms', cleanId), (snap) => {
+    const roomRef = ref(db, `rooms/${cleanId}`);
+    return onValue(roomRef, (snap) => {
         if (snap.exists()) {
-            callback(snap.data());
+            callback(snap.val());
+        } else {
+            callback(null);
         }
     }, (err) => {
         console.error("Room subscription error:", err);
@@ -310,7 +319,7 @@ export function subscribeToRoom(roomId, callback, onError) {
 export async function submitProofQueryToRoom(roomId, queryData) {
     const queryId = 'query_' + Math.random().toString(36).substr(2, 9);
     const patch = {
-        [`pendingQueries.${queryId}`]: {
+        [`pendingQueries/${queryId}`]: {
             ...queryData,
             id: queryId,
             status: 'pending',
@@ -323,13 +332,57 @@ export async function submitProofQueryToRoom(roomId, queryData) {
 
 export async function resolveProofQueryInRoom(roomId, queryId, result) {
     const patch = {
-        [`pendingQueries.${queryId}.status`]: 'resolved',
-        [`pendingQueries.${queryId}.result`]: result,
-        [`pendingQueries.${queryId}.resolvedAt`]: Date.now()
+        [`pendingQueries/${queryId}/status`]: 'resolved',
+        [`pendingQueries/${queryId}/result`]: result,
+        [`pendingQueries/${queryId}/resolvedAt`]: Date.now()
     };
     await updateRoomInDB(roomId, patch);
 }
 
+// ---------------------------------------------------------
+// COMPATIBILITY ADAPTERS FOR FIRESTORE STYLE CALLS
+// ---------------------------------------------------------
+export function doc(database, collectionPath, docId) {
+    return {
+        path: `${collectionPath}/${docId}`,
+        collection: collectionPath,
+        id: docId
+    };
+}
+
+export async function getDoc(docRef) {
+    if (!db) return { exists: () => false, data: () => null };
+    const path = typeof docRef === 'string' ? docRef : docRef.path;
+    const snap = await get(ref(db, path));
+    return {
+        exists: () => snap.exists(),
+        data: () => snap.val(),
+        val: () => snap.val()
+    };
+}
+
+export async function setDoc(docRef, data, options = {}) {
+    if (!db) return;
+    const path = typeof docRef === 'string' ? docRef : docRef.path;
+    if (options && options.merge) {
+        const formattedPatch = formatPatchToRTDB(data);
+        await update(ref(db, path), formattedPatch);
+    } else {
+        await set(ref(db, path), data);
+    }
+}
+
+export async function updateDoc(docRef, data) {
+    if (!db) return;
+    const path = typeof docRef === 'string' ? docRef : docRef.path;
+    const formattedPatch = formatPatchToRTDB(data);
+    await update(ref(db, path), formattedPatch);
+}
+
+export function serverTimestamp() {
+    return Date.now();
+}
+
 export {
-    onAuthStateChanged, doc, setDoc, getDoc, getDocs, updateDoc, deleteField, collection, query, where, serverTimestamp
+    onAuthStateChanged, ref, getDatabase
 };
